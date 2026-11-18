@@ -73,3 +73,62 @@ Le ho lasciate così perché correggerle cambierebbe la riproduzione dei file gi
 * `check2.py`: legge i nomi delle facce dal `regioni_ponti` originale, quindi le facce con soli punti nuovi danno larghezza NaN.
 * `finals.py`: l'elenco degli incroci con i cigli include i bordi del bed, quindi è poco informativo.
 * Codice inutilizzato in `place.py`, `widen.py`, `net.py`, `cl.py`, `chains.py` e `dp.py`, indicato nelle schede.
+
+## Secondo passo (17 novembre 2026): rami N/V/B e regola dei 5 m
+
+Il 2026-11-17 le sezioni sono state rifatte in tre rami: **N** (asta principale da Caldonazzo a Borgo, fino a S16130 = N16050, `N00050`–`N16050`), **V** (primi 60 del Brenta vecchio, `V00050`–`V03000`) e **B** (Brenta a valle di Borgo, `B00000`–`B17650`, con B00050 almeno 5 m a monte di `Ponte_Bordignon_monte`), e la regola dei 5 m è stata applicata alle breakline. Gli script sono in `scripts/` (tranne `viol.py`, in `scripts/esplorativi/`).
+
+Cartella di lavoro `WD`: `WD/in` (copie dei sei `layers/*_50m.gpkg`), `WD/in0` (copie degli originali `breaklines.gpkg`, `boundary.gpkg`, `regioni_ponti.gpkg`), `WD/work` (`core.py`, `next_bed.py`, `bank.py`, `cands.pkl`, `newfaces.pkl`, `dp.pkl`, `cltab.pkl` del lavoro del 2026-11-09, più `dpB.py`, `export_B.py`, `obst.py`), `WD/s16130/work` (esecuzione di `bank.py` per l'estensione di S16130), `WD/xn_points.json`. Gli script `assemble.py`, `fix5.py`, `check5.py`, `check_geom.py`, `regions2.py`, `prep_write.py` usano percorsi relativi e vanno lanciati con la cartella corrente = `WD`. Prima di `write2.py` i layer in `layers/` sono quelli del 2026-11-09; `write2.py` ne fa i backup datati `*_backup_20261117.gpkg`.
+
+| # | Script | Cosa fa | Produce | Scheda |
+|---|---|---|---|---|
+| 0 | `prep_inputs_nvb.py` | prepara `xn_points.json`, la sezione fittizia del canale di destra della S16130 e l'elenco delle breakline dei muri da bloccare | `xn_points.json`, `s16130/work/sec_in.json`, `mat11_lines.json` | [prep_inputs_nvb.md](prep_inputs_nvb.md) |
+| 1 | `dpB.py` | ricolloca il ramo B sui candidati dell'asta (programmazione dinamica) | `work/dpB.pkl` | [dpB.md](dpB.md) |
+| 2 | `export_B.py` | dati delle sezioni B | `work/sec_in.json` | [export_B.md](export_B.md) |
+| 3 | `next_bed.py` | limita la ricerca prima di un altro letto (invariato) | `sec_in.json` (aggiornato) | [next_bed.md](next_bed.md) |
+| 4 | `obst.py` | limita la ricerca prima del primo ostacolo oltre il piede | `sec_in.json` (aggiornato) | [obst.md](obst.md) |
+| 5 | `bank.py` (sistema, GDAL) | bankpoint sul DTM (invariato) | `work/bank_out.json` | [bank.md](bank.md) |
+| 6 | `bank.py` in `s16130/` | bankpoint per l'estensione di S16130 | `s16130/work/bank_out.json` | [bank.md](bank.md) |
+| 7 | `assemble.py` | sezioni N, V, B | `secs_new.json` | [assemble.md](assemble.md) |
+| 8 | `fix5.py` | regola dei 5 m sulle breakline | `fix5.json` | [fix5.md](fix5.md) |
+| 9 | `check5.py`, `check_geom.py` | verifiche su `fix5.json` | stampa | [check5.md](check5.md), [check_geom.md](check_geom.md) |
+| 10 | `regions2.py` | un punto regione per faccia | `regions2.json` | [regions2.md](regions2.md) |
+| 11 | `prep_write.py` | prepara le feature da scrivere | `write2.json` | [prep_write.md](prep_write.md) |
+| 12 | `write2.py` (sistema, OGR) | backup datati e scrittura dei sei `layers/*_50m.gpkg` | `layers/*_50m.gpkg` | [write2.md](write2.md) |
+| 13 | `verify2.py` | 24 controlli sui file riletti dal disco | stampa | [verify2.md](verify2.md) |
+
+Esplorativo: [viol](esplorativi/viol.md) (conteggio delle violazioni dei 5 m sulle copie in `in/`).
+
+Note: `xn_points.json` (punti di incontro nodestring/breakline) e `s16130/work/sec_in.json` sono prodotti da `prep_inputs_nvb.py` (passo 0). Il 17 novembre sono stati verificati identici a quelli usati per il lavoro.
+
+## Terzo passo (18 novembre 2026): B00400 su idrometro_Borgo
+
+Il 2026-11-18 tutto il ramo B è stato spostato verso monte di circa 16.6 m, perché la sezione B00400 coincida esattamente con la nodestring `idrometro_Borgo`. I rami N e V non cambiano. La cartella di lavoro è la stessa del secondo passo; `WD/in` contiene ancora le copie dei layer della mattina del 17 novembre, cioè i backup `*_backup_20261117.gpkg`.
+
+| # | Script | Cosa fa | Produce | Scheda |
+|---|---|---|---|---|
+| 1 | `dpB2.py` | sposta il ramo B con la B00400 ancorata a `idrometro_Borgo` | `work/dpB2.pkl` | [dpB2.md](dpB2.md) |
+| 2 | `export_B.py WD dpB2.pkl` | dati delle sezioni B, con la sezione ancorata | `work/sec_in.json` | [export_B.md](export_B.md) |
+| 3–5 | `next_bed.py`, `obst.py`, `bank.py` | come nel secondo passo | `work/sec_in.json`, `work/bank_out.json` | |
+| 6 | `assemble.py` | sezioni N, V, B; la B00400 diventa la nodestring | `secs_new.json` | [assemble.md](assemble.md) |
+| 7–12 | `fix5.py`, `check5.py`, `check_geom.py`, `regions2.py`, `prep_write.py`, `write2.py`, `verify2.py` | come nel secondo passo | | |
+| 13 | `sections_csv.py` | tabella delle sezioni | `docs/Brenta_sections_50m_mesh10.csv` | [sections_csv.md](sections_csv.md) |
+
+Prima di `write2.py` lo stato corrente dei sei layer è stato copiato a mano in `*_backup_20261118.gpkg`, verificato con `cmp`. Poi i layer sono stati riportati ai backup del 17 mattina, perché `write2.py` applica le modifiche rispetto a quello stato; vedi [write2.md](write2.md).
+
+## Quarto passo (18 novembre 2026): sezioni di Borgo sistemate a mano
+
+L'utente ha modificato a mano in QGIS 11 sezioni B (B00000–B00550, tranne B00100) e `idrometro_Borgo` insieme alla B00400. Questi script riallineano gli altri layer, riparano gli effetti collaterali e controllano tutto. Si lanciano dalla cartella del progetto; `WD` serve solo per i file intermedi.
+
+| # | Script | Cosa fa | Produce | Scheda |
+|---|---|---|---|---|
+| 1 | `sync_cp_bp.py` | linee d'asse, centerpoint e bankpoint dalle sezioni attuali | `WD/write3.json` | [sync_cp_bp.md](sync_cp_bp.md) |
+| 2 | `write3.py` (sistema, OGR) | backup con etichetta e scrittura di un payload | `layers/*_50m.gpkg` | [write3.md](write3.md) |
+| 3 | `fix_manual.py` | z = 0 delle sezioni, vertici a pochi mm dagli incroci, punti regione delle facce nuove | `WD/write3b.json` | [fix_manual.md](fix_manual.md) |
+| 4 | `write3.py` (sistema, OGR) | scrive il payload di `fix_manual.py` | `layers/*_50m.gpkg` | [write3.md](write3.md) |
+| 5 | `sync_cp_bp.py` | rilanciato come controllo: zero cambiamenti | | [sync_cp_bp.md](sync_cp_bp.md) |
+| 6 | `verify3.py`, `verify3_dtm.py` (sistema) | controllo di tutti gli attributi, delle geometrie e delle regioni | stampa | [verify3.md](verify3.md), [verify3_dtm.md](verify3_dtm.md) |
+| 7 | `sections_csv.py` | tabella delle sezioni | `docs/Brenta_sections_50m_mesh10.csv` | [sections_csv.md](sections_csv.md) |
+| 8 | `dx_dev.py` | analisi di dx_dev tra sezioni consecutive | `docs/Brenta_dx_dev_50m.csv` | [dx_dev.md](dx_dev.md) |
+
+Backup: `*_backup_20261118b.gpkg` (centerline, centerpoints, bankpoints, prima del passo 2) e `*_backup_20261118c.gpkg` (breaklines, boundary, regioni_ponti, prima del passo 4).

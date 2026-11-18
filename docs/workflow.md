@@ -1,129 +1,651 @@
-# Workflow: registro delle azioni
+# Registro del lavoro
 
-Progetto: `/home/amedeo/Documents/Brenta_mesh_10`. Richiesta: replicare il lavoro descritto in `docs/` con sezioni ogni 50 m ± 0.5 m, a partire da `layers/`.
+Questo registro racconta in ordine cronologico cosa è stato fatto sui dati del Brenta, con le decisioni prese, i numeri ottenuti e le verifiche eseguite. Le regole generali e il perché delle scelte sono spiegati in [Brenta_regole_e_metodo.md](Brenta_regole_e_metodo.md). Gli script usati sono in `scripts/` e sono descritti in [scripts/README.md](scripts/README.md).
 
-* Regole e metodo applicati: [Brenta_regole_e_metodo.md](Brenta_regole_e_metodo.md).
-* Script usati: `scripts/`, documentati in [scripts/README.md](scripts/README.md).
-* Qui si registrano solo le azioni utili al workflow, non le operazioni di gestione dei file.
+La richiesta di partenza era replicare il lavoro descritto nei documenti di `docs/` con sezioni ogni 50 m ± 0.5 m, usando i dati di `layers/`.
 
-## Registro
+## 9 novembre 2026
 
-### 2026-11-09: lettura documenti e inventario (sola lettura)
+### Lettura dei documenti e inventario dei dati
 
-1. Letti i 4 documenti in `docs/`: `CLAUDE_CODE_HANDOFF_Brenta.md`, `Brenta_nodestrings_split_report.md`, `Brenta_bankpoints_report.md`, `Brenta_sections_50m_report.md`.
-2. Inventario di `layers/` (metadati e attributi, nessuna modifica). **Lo stato trovato non coincide con quello descritto nei report:**
+Ho letto i quattro documenti di partenza: le note di passaggio di consegne, il report sulla suddivisione delle nodestring, quello sui bankpoint e quello sulle sezioni a 50 m. Questi documenti sono stati poi riassunti in `Brenta_regole_e_metodo.md` ed eliminati.
 
-| Voce | Report (`Test_Brenta`, ~6 km) | Trovato in `layers/` |
+Poi ho fatto l'inventario di `layers/`, leggendo solo metadati e attributi. La prima sorpresa è stata che **i dati non corrispondevano a quelli descritti nei report**. I report parlavano di un tratto di prova di circa 6 km, mentre in `layers/` c'era l'intero modello:
+
+| | Nei report (tratto di prova) | In `layers/` |
 |---|---|---|
-| Estensione | ~6 km, E 679780–684663 | ~30 km, E 675836–705405 |
-| `boundary.gpkg` | 34 feature (`P17_*`, `BC_monte/valle`, `S****`) | 53 feature (BC, ponti P13/P17/P20/P27, Bordignon, Filippini, edifici Borgo, divergenza, boale...) e nessuna sezione `S****` |
-| `regioni_ponti.gpkg` | 44 punti | 176 punti, 29 combinazioni nome/mat_id/max_area |
-| `breaklines.gpkg` | linee ciglio già allargate a 40 m | 1285 feature, stato da verificare |
-| `centerline`, `centerpoints`, `bankpoints` | presenti | **assenti** |
-| `DTM_finale_clip.tif` | presente | assente, solo `DTM_finale.tif` (0.25 m, DEFLATE, nodata −9999) |
-| Altro | | `quote_fisse.gpkg`, `punti_quote_fisse.gpkg`, `quote_fisse_elevation-mesh.2dm` |
+| Estensione | circa 6 km, E 679780–684663 | circa 30 km, E 675836–705405 |
+| `boundary.gpkg` | 34 feature, comprese le sezioni `S****` | 53 feature (condizioni al contorno, ponti P13, P17, P20, P27, Bordignon, Filippini, edifici di Borgo, divergenza, boale…) e nessuna sezione |
+| `regioni_ponti.gpkg` | 44 punti | 176 punti, con 29 combinazioni di nome, materiale e area massima |
+| `breaklines.gpkg` | cigli già allargati a 40 m | 1285 feature, stato da verificare |
+| Linea d'asse, punti d'asse, bankpoint | presenti | assenti |
+| DTM | ritaglio `DTM_finale_clip.tif` | solo il DTM completo `DTM_finale.tif` (0.25 m, nodata −9999) |
 
-3. Strumenti disponibili: GDAL CLI, `/usr/bin/python3` con GDAL/PyQGIS, Python Anaconda con geopandas, shapely 2.1.2, numpy.
+In più c'erano `quote_fisse.gpkg`, `punti_quote_fisse.gpkg` e `quote_fisse_elevation-mesh.2dm`, che non riguardano questa fase. Sul computer erano disponibili GDAL da riga di comando, il Python di sistema con GDAL e PyQGIS e il Python di Anaconda con geopandas, shapely 2.1.2 e numpy.
 
-### 2026-11-09: analisi preliminare del dominio (sola lettura, script nello scratchpad)
+### Analisi del dominio
 
-4. Copiati `boundary`, `breaklines`, `regioni_ponti` nello scratchpad, per non interferire con QGIS. I file in `layers/` non sono stati modificati.
-5. Ricostruito il grafo planare (`breaklines` + `boundary`): **173 facce**, nessuna senza punto regione, una con 2 punti, e 2 punti (fid 65, 135) fuori da ogni faccia. `breaklines` ha 14 righe con geometria vuota o nulla.
-6. Ricostruito lo scheletro (Voronoi) del poligono d'alveo, che risulta connesso, e misurati i percorsi. Sono misure di analisi, non ancora una centerline definitiva.
+Per non interferire con QGIS ho lavorato su copie di `boundary`, `breaklines` e `regioni_ponti` in una cartella temporanea.
 
-| Ramo | Lunghezza |
-|---|---|
-| Asta principale, `BC_caldonazzo` → `BC_brenta_valle` | 34.1 km (~682 sezioni a 50 m) |
-| Rami laterali (17) | 9.1 km in totale, da 30 m a 1.7 km ciascuno |
+Il grafo planare formato da breakline e nodestring ha **173 facce**. Nessuna è senza punto regione, ma una ne contiene due (fid 57 e 58), e due punti (fid 65 e 135) non cadono in nessuna faccia perché hanno geometria nulla. In `breaklines` ci sono 14 righe con geometria vuota o nulla.
 
-| Tratto dell'asta | Progressiva s (km) | Corridoio bed + sponda: p5 / mediana / p95 (m) | Bed: mediana (m) | Quota < 40 m |
+Dallo scheletro del poligono d'alveo ho misurato un'asta principale di circa 34.1 km, da `BC_caldonazzo` a `BC_brenta_valle`, pari a circa 682 sezioni a 50 m. A questa si aggiungono 17 rami laterali, per 9.1 km in tutto. Lungo l'asta la larghezza del corridoio (letto più sponde) cambia molto:
+
+| Tratto | Progressiva (km) | Corridoio: 5° perc. / mediana / 95° perc. (m) | Letto, mediana (m) | Quota sotto 40 m |
 |---|---|---|---|---|
-| Caldonazzo–P13 | 0–3.9 | 25.9 / 30.6 / 52.5 | 5.2 | 78 % |
-| Tratto dei report (ex `Test_Brenta`) | 4.2–10.2 | 28.2 / 31.7 / 39.2 | 8.1 | 99 % |
-| P20–divergenza | 10.2–13.2 | 33.8 / 40.1 / 42.1 | 9.1 | 48 % |
-| Borgo (divergenza–confluenza) | 13.2–17.3 | 49.8 / 58.4 / 70.8 | 9.4 | 2 % |
-| A valle di Borgo | 17.3–22.8 | 50.2 / 66.5 / 141.1 | 15.6 | 0 % |
-| Valle | 22.8–34.1 | 77.9 / 100.4 / 219.4 | 29.3 | 0 % |
+| Caldonazzo – P13 | 0 – 3.9 | 25.9 / 30.6 / 52.5 | 5.2 | 78 % |
+| Tratto di prova dei report | 4.2 – 10.2 | 28.2 / 31.7 / 39.2 | 8.1 | 99 % |
+| P20 – divergenza | 10.2 – 13.2 | 33.8 / 40.1 / 42.1 | 9.1 | 48 % |
+| Borgo (divergenza – confluenza) | 13.2 – 17.3 | 49.8 / 58.4 / 70.8 | 9.4 | 2 % |
+| A valle di Borgo | 17.3 – 22.8 | 50.2 / 66.5 / 141.1 | 15.6 | 0 % |
+| Valle | 22.8 – 34.1 | 77.9 / 100.4 / 219.4 | 29.3 | 0 % |
 
-**Conclusioni:**
+Da questi numeri ho tratto quattro conclusioni.
 
-* `layers/` è lo stato **precedente** all'allargamento a 40 m: nel tratto dei report la mediana è 31.7 m, come il valore "prima" di `Brenta_bankpoints_report.md` §7.1. Le linee di ciglio andrebbero quindi ancora allargate.
-* La regola dei bankpoint (§7.2, "≤ 15 m dalla mezzeria") vale solo per un corridoio di circa 40 m. Dove il bed supera 30 m (~6.4 km dell'asta) il piede di sponda è già oltre i 15 m, quindi la regola non è applicabile così com'è.
-* Il corridoio è < 40 m su ~10.8 km dell'asta, quasi tutti a monte di Borgo.
-* Serve una centerline nuova: `layers/` non ne contiene una.
+* I dati di `layers/` sono quelli **precedenti all'allargamento** dei cigli. Nel tratto di prova la mediana è 31.7 m, lo stesso valore che i report indicavano prima di allargare.
+* Il limite di ricerca dei bankpoint a 15 m dalla mezzeria funziona solo con un corridoio di circa 40 m. Dove il letto supera i 30 m, circa 6.4 km dell'asta, il piede è già oltre i 15 m e la regola non si può applicare così com'è.
+* Il corridoio è più stretto di 40 m su circa 10.8 km, quasi tutti a monte di Borgo.
+* Serviva una linea d'asse nuova, perché `layers/` non ne conteneva una.
 
-**Stato:** nessun layer creato o modificato. In attesa delle decisioni dell'utente su estensione, allargamento a 40 m e regola bankpoint nei tratti larghi.
+A questo punto non avevo ancora scritto né modificato nulla, e ho chiesto all'utente come procedere.
 
-### 2026-11-09: decisioni dell'utente
+### Decisioni dell'utente
 
-7. **Estensione:** asta principale + Brenta vecchio.
-8. **Allargamento a 40 m:** da fare in un **nuovo file**, senza toccare `breaklines.gpkg`. Dopo Borgo il fiume si allarga molto, quindi il criterio va adattato.
-9. **Bankpoint nei tratti con bed > 30 m:** ricerca fino a 15 m verso l'esterno da ciascun piede sponda, sempre entro il limite di 5 m dal ciglio.
+* Le sezioni si fanno sull'**asta principale e sul Brenta vecchio**.
+* L'allargamento dei cigli va scritto in un **file nuovo**, senza toccare `breaklines.gpkg`. Dopo Borgo il fiume si allarga molto, quindi il criterio dei 40 m va adattato.
+* Dove il letto supera i 30 m, la ricerca del bankpoint arriva fino a **15 m dal piede di ciascuna sponda**, sempre restando a 5 m dal ciglio.
 
-### 2026-11-09: tracciato delle centerline (scratchpad)
+### Linee d'asse
 
-10. Asta principale: scheletro Voronoi del poligono d'alveo, percorso `BC_caldonazzo` → `BC_brenta_valle` con costo che preferisce il centro del letto. Lunghezza dopo lisciatura 33 981.6 m.
-11. Brenta vecchio: dalla `divergenza_valle_brenta_vecchio` fino alla confluenza a E ≈ 689850, con punti di passaggio sul letto largo. Lunghezza 3 058.7 m. Il percorso esclude la striscia parallela del boale e il collegamento `boale_sifone`.
-12. Lisciatura gaussiana con σ variabile: 6 m dove il bed è stretto, 60 m dove è largo.
-13. **Assunzione a monte:** tra E 677880 e E 678420 l'alveo ha due rami. L'asta usa il collegamento nord (bed mediano 7.4 m) e non il meandro sud (4.9 m). Il meandro resta senza sezioni.
+La linea d'asse dell'**asta principale** segue lo scheletro del poligono d'alveo da `BC_caldonazzo` a `BC_brenta_valle`, preferendo il centro del letto. Dopo la lisciatura è lunga 33 981.6 m.
 
-### 2026-11-09: allargamento dei cigli (calcolo in scratchpad, file non ancora scritto)
+Il **Brenta vecchio** va dalla `divergenza_valle_brenta_vecchio` alla confluenza, intorno a E 689850, ed è lungo 3 058.7 m. Per tenerlo sul letto principale ho imposto alcuni punti di passaggio; senza, il percorso deviava nella striscia parallela del boale o nel collegamento `boale_sifone`.
 
-14. **Criterio adottato**, derivato dal §7.1 dei report e adattato a valle di Borgo:
-    * **A monte di Borgo e sul Brenta vecchio:** come §7.1, W = bed + 2 sponde ≥ 40.10 m. Spostamento simmetrico (40.10 − W)/2 per lato.
-    * **A valle di Borgo (s > 17 335 m):** il valore fisso di 40 m non ha significato, perché il corridoio è già 50–220 m. Ogni sponda deve essere larga almeno **16.05 m**, la larghezza media per lato nel tratto di riferimento ((40.10 − 8.1)/2). Lo spostamento è calcolato lato per lato.
-    * **Borgo:** nessuno spostamento dove la sponda è `sponda_antro` o muro.
-    * Il ciglio resta sempre ad almeno 5 m dalla linea successiva verso l'esterno.
-15. Linee traversali che finivano sui cigli (ponti P13, P17, P20: fid 1113–1116, 1421, 1422) prolungate in linea retta fino ai nuovi cigli. Estremi di ciglio fatti scorrere sul contorno o su linee non spostate: fid 17, 1001, 1061.
-16. Nodestring `idrometro_Ponte_Zaccon` prolungata collinearmente sui due estremi (0.86 e 0.80 m), altrimenti la sponda perderebbe la chiusura di regione.
-17. Verifica del grafo planare dopo lo spostamento: 173 facce come l'originale, nessuna micro-faccia, nessuna fusione di regioni. Resta solo la faccia con 2 punti già presente all'origine (fid 57 e 58, `muro`).
+La lisciatura usa un filtro gaussiano di ampiezza 6 m dove il letto è stretto, fino a 60 m dove è largo.
 
-### 2026-11-09: sezioni, bankpoint, regioni e scrittura dei file
+Tra E 677880 e 678420 l'alveo si divide in due rami. Ho fatto passare l'asta per il collegamento nord, più largo (letto mediano 7.4 m), e non per il meandro sud (4.9 m), che resta quindi senza sezioni. È una mia scelta, da confermare.
 
-18. **Posizione delle sezioni.** Per ogni ramo, candidati ogni 0.25 m lungo la centerline. Ottimizzazione su tutta la catena con passo 49.5–50.5 m lungo la centerline. In ordine di priorità: non incrociare nodestring e linee trasversali, ridurre le violazioni della regola dei 5 m, restare vicino a 50 m. Il Brenta vecchio considera come ostacoli anche le sezioni dell'asta.
-19. **Direzione:** perpendicolare alla corda della centerline tra s − 1 m e s + 1 m. Primo vertice in sinistra orografica (`sx`), come nei report.
-20. **Bankpoint** con la regola §7.2: primo massimo locale con prominenza ≥ 5 cm, escludendo la metà inferiore della sponda; altrimenti la cella più alta nell'intervallo. Il profilo attraversa ogni cella del DTM senza interpolazione. Il limite di ricerca è ≥ 5 m dentro il ciglio e ≤ 15 m dalla mezzeria.
-21. **Limite di 15 m dal piede sponda** (decisione 9) dove il bed supera 30 m. L'ho applicato anche dove la mezzeria spostata (es. alle confluenze) lascerebbe meno di 2 m di ricerca: questa estensione è una mia scelta.
-22. **Limitazioni aggiunte alla ricerca:** il bankpoint si ferma 0.5 m prima di nodestring o linee interne (edifici a Borgo) e 0.5 m prima di un altro letto vicino (22 lati, soprattutto Brenta vecchio).
-23. **Sezioni contro i muri:** 4 lati (S16382 dx, S16432 dx, S16533 sx, S16583 dx) terminano 0.5 m prima del muro di un edificio, dentro il bed, perché l'edificio coincide con il piede sponda. Su quei lati non attraversano il piede.
-24. **Nomi:** progressiva reale in metri, 5 cifre: `S00050`…`S33940` per l'asta, `V00050`…`V03058` per il Brenta vecchio. I report usano invece la progressiva nominale, ma qui lo scarto accumulato sarebbe fino a 140 m. Fid 64–800, id 60–796.
-25. **File creati in `layers/`** (nessun originale modificato; SHA-256 di `boundary`, `breaklines`, `regioni_ponti` invariati):
+### Allargamento dei cigli
+
+Il criterio adottato riprende quello dei report e lo adatta a valle di Borgo:
+
+* **a monte di Borgo e sul Brenta vecchio** il corridoio deve misurare almeno 40.10 m, e ogni ciglio si sposta di (40.10 − W)/2;
+* **a valle di Borgo** (s > 17 335 m) il corridoio è già di 50–220 m, quindi un minimo di 40 m non ha senso. Lì ogni sponda deve essere larga almeno **16.05 m**, che è la larghezza media di una sponda nel tratto di prova ((40.10 − 8.1)/2). Lo spostamento si calcola sponda per sponda;
+* le sponde urbane e i muri di Borgo non si spostano;
+* il ciglio resta sempre ad almeno 5 m dalla linea successiva verso l'esterno.
+
+Per non rompere le regioni ho dovuto sistemare alcune linee collegate ai cigli:
+
+* le chiusure dei ponti P13, P17 e P20 (fid 1113–1116, 1421 e 1422) sono state prolungate in linea retta fino ai nuovi cigli;
+* le estremità dei cigli fid 17, 1001 e 1061 scorrono sul contorno o sulle linee che non si spostano;
+* la nodestring `idrometro_Ponte_Zaccon` è stata prolungata nella sua direzione di 0.86 e 0.80 m. Senza prolungamento, la regione di sponda non sarebbe più rimasta chiusa.
+
+Dopo lo spostamento il grafo ha ancora **173 facce**, come all'origine, senza facce nuove né regioni fuse. Resta solo la faccia con due punti già presente nei dati originali (fid 57 e 58, `muro`).
+
+### Sezioni, bankpoint e regioni
+
+**Posizione.** Per ogni ramo ho generato candidati ogni 0.25 m lungo la linea d'asse e ho scelto la sequenza migliore su tutto il ramo, con passo tra 49.5 e 50.5 m. Le priorità, in ordine:
+
+1. non incrociare nodestring e linee trasversali;
+2. ridurre le violazioni della regola dei 5 m;
+3. restare vicino a 50 m.
+
+Sul Brenta vecchio anche le sezioni dell'asta contano come ostacoli. Ogni sezione è perpendicolare alla corda della linea d'asse tra s − 1 m e s + 1 m e parte dalla sponda sinistra.
+
+**Bankpoint.** Ho applicato la regola dei report: primo massimo locale con prominenza di almeno 5 cm, ignorando la metà inferiore della sponda, oppure, in mancanza, la cella più alta. Ogni cella attraversata dal profilo viene letta, senza interpolazione. La ricerca resta ad almeno 5 m dal ciglio e a non più di 15 m dalla mezzeria. Dove il letto supera i 30 m vale il limite di 15 m dal piede deciso dall'utente. L'ho usato anche dove la mezzeria, spostata per esempio alle confluenze, lasciava meno di 2 m di ricerca. Questa estensione è una mia scelta.
+
+Ho aggiunto due limiti alla ricerca. Il bankpoint si ferma 0.5 m prima di una nodestring o di una linea interna, come gli edifici di Borgo. Si ferma anche 0.5 m prima del letto di un altro ramo vicino: è successo su 22 lati, soprattutto sul Brenta vecchio.
+
+In quattro casi a Borgo un edificio coincide con il piede della sponda: S16382 dx, S16432 dx, S16533 sx e S16583 dx. Lì la sezione si ferma 0.5 m prima del muro, dentro il letto, e non attraversa il piede.
+
+**Nomi.** Le sezioni prendono il nome dalla progressiva reale, a cinque cifre: `S00050` … `S33940` sull'asta e `V00050` … `V03058` sul Brenta vecchio. Una numerazione nominale come quella dei report, su questa lunghezza, si sarebbe scostata fino a 140 m dalla posizione vera. Le sezioni hanno fid da 64 a 800 e id da 60 a 796.
+
+**Regioni.** Il grafo finale ha 905 facce. Ho aggiunto **733 punti** nelle nuove facce del letto, con gli attributi della regione d'alveo da cui derivano. Il punto originale fid 41 (`source_3_brenta_3`) cadeva a 0.04 m da una nuova sezione ed è stato sostituito da uno nuovo nella stessa regione; tutti gli altri punti originali sono rimasti. I fid 65 e 135, senza geometria fin dall'origine, sono rimasti così.
+
+**File scritti.** Tutti in `layers/`, senza modificare gli originali: l'impronta SHA-256 di `boundary`, `breaklines` e `regioni_ponti` è rimasta identica.
 
 | File | Contenuto |
 |---|---|
-| `centerline_50m.gpkg` | 2 linee: `asta_principale` (33 981.6 m), `brenta_vecchio` (3 058.7 m) |
-| `centerpoints_50m.gpkg` | 737 punti: `nome`, `stream`, `s_m`, `dist_next` |
-| `bankpoints_50m.gpkg` | 1474 punti: `nome`, `sezione`, `s_m`, `z_dtm`, `dist_cp`, `tipo`, `regola`, `prom` |
-| `breaklines_50m.gpkg` | Copia di `breaklines` con 272 feature modificate (cigli allargati e linee collegate) |
-| `boundary_50m.gpkg` | 53 nodestring originali (52 identiche, `idrometro_Ponte_Zaccon` prolungata) + 737 sezioni |
+| `centerline_50m.gpkg` | Le due linee d'asse: `asta_principale` (33 981.6 m) e `brenta_vecchio` (3 058.7 m) |
+| `centerpoints_50m.gpkg` | 737 punti d'asse, con i campi `nome`, `stream`, `s_m`, `dist_next` |
+| `bankpoints_50m.gpkg` | 1474 bankpoint, con i campi `nome`, `sezione`, `s_m`, `z_dtm`, `dist_cp`, `tipo`, `regola`, `prom` |
+| `breaklines_50m.gpkg` | Copia di `breaklines` con 272 feature modificate: cigli allargati e linee collegate |
+| `boundary_50m.gpkg` | Le 53 nodestring originali (52 identiche, `idrometro_Ponte_Zaccon` prolungata) più le 737 sezioni |
 | `regioni_ponti_50m.gpkg` | 908 righe, di cui 906 con geometria |
 
-26. Creato anche `docs/Brenta_sections_50m_mesh10.csv`: tabella delle 737 sezioni con quote, tipo, regola, prominenza e lunghezza.
-27. **Regioni:** sulle 905 facce finali, 733 nuovi punti con gli attributi della regione d'alveo di appartenenza. Il punto originale fid 41 (`source_3_brenta_3`, a 0.04 m da una nuova sezione) è sostituito; tutti gli altri restano. I fid 65 e 135 hanno geometria nulla già all'origine e restano così.
+La tabella delle 737 sezioni, con quote, tipo, regola, prominenza e lunghezza, è in `docs/Brenta_sections_50m_mesh10.csv`.
 
-### 2026-11-09: verifiche (sui file riletti dal disco, con codice separato)
+### Verifiche
 
-1. Conteggi: `breaklines_50m` 1285, `boundary_50m` 790 (53 + 737), `regioni_ponti_50m` 908, `centerpoints_50m` 737, `bankpoints_50m` 1474. **OK**
-2. Nomi e id delle sezioni univoci. **OK**
-3. Tipo geometria e SRS (EPSG:25832) invariati, `integrity_check` ok, R-tree = feature con geometria. **OK**
-4. Feature non toccate identiche all'originale: 999 breakline, 52 nodestring, 173 punti regione. **OK**
-5. Passo lungo la centerline: asta 49.75–50.50 m, Vecchio 49.50–50.50 m. **OK**, nessuna fuori tolleranza.
-6. Distanza rettilinea tra centerpoint: **4 coppie fuori da 50 ± 0.5 m**, in curve strette o rami con punte: partenze a s = 1914 (46.68 m), 16180 (48.05 m), 16231 (49.31 m) sull'asta e 3008 (48.73 m) sul Vecchio.
-7. Sezioni perpendicolari alla corda (scarto ≤ 6.5e-9°), 2 vertici, primo vertice a sinistra, vertici uguali ai bankpoint. **OK**
-8. Nessun incrocio tra sezioni, né con le altre nodestring. **OK**
-9. Linee d'alveo attraversate: 733 sezioni attraversano esattamente 2 linee, le 4 contro i muri 1 sola. **OK**
-10. Grafo planare finale: 905 facce, ognuna con un punto, più la faccia con 2 punti già presente all'origine (fid 57, 58). **OK**
-11. `z_dtm` uguale al valore della cella DTM sui 1474 punti; bankpoint a ≥ 5 m dal ciglio. **OK**
-12. Rideterminazione indipendente dei bankpoint con campionamento a 1 cm: 1446 su 1474 uguali. Le 28 differenze sono 26 celle attraversate per meno di 1 cm (il campionamento non le vede) e 2 casi con massimo diverso (S09338 sx, S30831 dx). Questi 2 sono probabilmente dovuti alla stessa causa, che però **non ho dimostrato**.
-13. Allargamento, campioni ogni 0.5 m, sui file finali:
-    * Asta a monte di Borgo: W < 40 m solo sullo 0.17 % dei campioni (59 su 34 669), in punti isolati e in testa all'asta (minimo 34.4 m a s = 1–2 m).
-    * Asta a valle di Borgo: sponda < 16 m solo in punti isolati e all'ultimo tratto, s = 33 957–33 980, dove il corridoio arriva all'uscita (nessuna sezione lì).
-    * Brenta vecchio: W < 40 m su 397 campioni su 6112, tra cui s = 2731–2910 (sponde urbane non spostate, minimo 31 m) e s = 1090–1104.
-    * I cigli spostati non si autointersecano. Le 11 linee trasversali che risultano incrociare altre linee sono i tagli dei ponti sui piedi sponda, già presenti in origine: 10 coppie già in `breaklines.gpkg`, 1 che tocca un vertice.
+Ho eseguito tutte le verifiche sui file riletti dal disco, con codice separato da quello di produzione.
 
-### Punti aperti
+1. **Conteggi corretti:** `breaklines_50m` 1285, `boundary_50m` 790 (53 + 737), `regioni_ponti_50m` 908, `centerpoints_50m` 737, `bankpoints_50m` 1474.
+2. **Nomi e id** delle sezioni tutti univoci.
+3. **Struttura dei file:** tipo di geometria e sistema di riferimento invariati, `integrity_check` ok, indice spaziale completo.
+4. **Feature non toccate:** identiche all'originale (999 breakline, 52 nodestring, 173 punti regione).
+5. **Passo lungo la linea d'asse:** sempre in tolleranza, tra 49.75 e 50.50 m sull'asta e tra 49.50 e 50.50 m sul Brenta vecchio.
+6. **Distanza in linea retta tra punti d'asse:** in quattro casi scende sotto i 49.5 m, tutti in curve strette o in punti dove la linea fa una punta. Le coppie partono da s = 1914 (46.68 m), 16180 (48.05 m) e 16231 (49.31 m) sull'asta, e da s = 3008 (48.73 m) sul Brenta vecchio.
+7. **Geometria delle sezioni:** perpendicolari alla corda (scarto massimo 6.5·10⁻⁹ gradi), con due vertici, il primo a sinistra, coincidenti con i bankpoint.
+8. **Incroci:** nessuna sezione ne incrocia un'altra o una nodestring.
+9. **Linee di piede:** 733 sezioni attraversano esattamente le due linee di piede; le quattro contro i muri ne attraversano una.
+10. **Punti regione:** il grafo finale ha 905 facce, ognuna con un punto, più la faccia con due punti già presente all'origine.
+11. **Quote e distanza dal ciglio:** la quota di tutti i 1474 bankpoint coincide con il valore della cella, e tutti stanno ad almeno 5 m dal ciglio.
+12. **Ricalcolo indipendente dei bankpoint** con campionamento a 1 cm: coincidono 1446 punti su 1474. Delle 28 differenze, 26 sono celle attraversate per meno di 1 cm, che il campionamento non vede. Gli altri due casi (S09338 sx e S30831 dx) hanno con buona probabilità la stessa causa, ma non l'ho dimostrato.
+13. **Larghezza dopo l'allargamento**, campionata ogni 0.5 m:
+    * sull'asta a monte di Borgo il corridoio è sotto i 40 m solo nello 0.17 % dei campioni (59 su 34 669), in punti isolati e all'inizio dell'asta (minimo 34.4 m a s = 1–2 m);
+    * a valle di Borgo una sponda è sotto i 16 m solo in punti isolati e negli ultimi metri, tra s = 33 957 e 33 980, dove il corridoio arriva all'uscita e non ci sono sezioni;
+    * sul Brenta vecchio il corridoio è sotto i 40 m in 397 campioni su 6112, soprattutto tra s = 2731 e 2910, dove le sponde urbane non si spostano (minimo 31 m), e tra s = 1090 e 1104;
+    * i cigli spostati non si intersecano mai con sé stessi. Le 11 linee che risultano incrociare altre linee sono i tagli dei ponti sui piedi di sponda, già presenti nei dati originali (10 coppie), più un caso in cui una linea tocca un vertice.
 
-* **Regola dei 5 m non risolta:** 266 attraversamenti su 1470, in 182 sezioni, hanno un vertice di breakline a meno di 5 m. 40 sono sotto 0.5 m (minimo 0.018 m, S12654) e possono generare elementi molto piccoli. Come deciso nel report dei 50 m, le linee di piede non sono state modificate.
-* **3 nuovi punti regione a meno di 1 m da una linea:** fid 485 (0.14 m), 504 (0.19 m), 568 (0.69 m), in regioni troppo strette per rispettare il limite.
-* **Prova di riproduzione del report non eseguita:** in `layers/` mancano le sezioni e la centerline originali, quindi non ho potuto confrontare il metodo con i 60 bankpoint dei report.
-* **Mesh non rigenerata:** va fatta in QGIS/BASEmesh da `breaklines_50m`, `boundary_50m`, `regioni_ponti_50m`. `STRINGDEF` deve includere le 737 nuove sezioni.
+### Questioni aperte
+
+* **Regola dei 5 m.** In 266 incroci su 1470, distribuiti su 182 sezioni, c'è un vertice di breakline a meno di 5 m. In 40 casi la distanza è sotto 0.5 m, con un minimo di 0.018 m nella sezione S12654: lì è probabile che nascano elementi molto piccoli. Come previsto dalle regole, le linee di piede non sono state toccate.
+* **Punti regione vicini alle linee.** Tre nuovi punti stanno a meno di 1 m da una linea, perché le loro regioni sono troppo strette: fid 485 (0.14 m), 504 (0.19 m) e 568 (0.69 m).
+* **Confronto con i report.** Non è stato possibile confrontare il metodo con i 60 bankpoint dei report, perché in `layers/` mancano le sezioni e la linea d'asse di allora.
+* **Mesh.** La mesh non è ancora stata rigenerata. Va costruita in QGIS/BASEmesh da `breaklines_50m`, `boundary_50m` e `regioni_ponti_50m`, e il blocco `STRINGDEF` va aggiornato con le 737 nuove sezioni.
+
+## 17 novembre 2026
+
+### Punto di partenza
+
+Le richieste dell'utente erano quattro:
+
+* sistemare tutti gli incroci secondo la regola dei 5 m, spostando sempre le breakline e mai le nodestring, e senza spostare i punti d'incrocio;
+* risolvere i punti regione troppo vicini alle linee;
+* separare i tre rami alla confluenza di Borgo, che un modello 1D non può riprodurre;
+* rinominare tutte le sezioni.
+
+Le altre due questioni aperte (passo in linea retta e confronto con i report) sono state lasciate da parte su sua indicazione.
+
+Prima di tutto ho confrontato i file `_50m` con quelli scritti il 9 novembre, per capire cosa avesse già corretto l'utente a mano:
+
+* 21 breakline semplificate nel tratto a monte (E < 679 100), 6 delle quali svuotate, e la breakline 1101 eliminata vicino alla `check_portata_Brenta_nuovo`;
+* la nodestring `check_portata_Brenta_nuovo` allungata fino a comprendere anche il canale di destra;
+* le sezioni S00151 e S01965 allungate sul lato sinistro, sulla stessa retta, di 2.42 e 1.22 m. In origine i loro estremi sfioravano una breakline a pochi centimetri;
+* il punto regione 504 spostato di 4.3 m.
+
+Tutte queste modifiche sono state mantenute. Sullo stato di partenza restavano 264 incroci in violazione della regola dei 5 m.
+
+### Decisioni dell'utente
+
+* **Rami.** I rami diventano tre, ciascuno con la sua lettera: N da Caldonazzo a Borgo, V per il Brenta vecchio, B da Borgo in poi. I rami restano collegati nella mesh 2D; sono le sezioni a fare da estremi dei rami, mentre le condizioni al contorno del modello 1D le imposta l'utente.
+* **Nomi.** Il numero di ogni sezione è la sua posizione nel ramo moltiplicata per 50, indipendentemente dalla progressiva reale, che resta nel campo `s_m` di `centerpoints_50m`. Il ramo B parte da B00000.
+* **Progressiva.** La progressiva di B parte da zero in B00000; N e V mantengono quella di prima.
+* **Ponte Bordignon.** La B00050 deve stare almeno 5 m a monte del ponte.
+* **Regola dei 5 m.** Si accetta che una linea si sposti al massimo di 2 m per singola correzione.
+
+### Nuova suddivisione delle sezioni
+
+* **Ramo N:** le prime 321 sezioni dell'asta, fino all'ex S16130, che diventa **N16050**. Geometrie invariate, comprese le due allungate dall'utente. La N16050 è stata allungata verso destra fino a comprendere il canale parallelo (`bed_borgo`). Il nuovo bankpoint destro è stato cercato con la stessa regola, dal piede del canale di destra verso l'esterno, fermandosi 0.5 m prima della striscia di muro. Non c'è un massimo locale, quindi vale la cella più alta, a 0.84 m dal muro (z = 384.79 m). La sezione ora misura 27.3 m e attraversa i due canali e l'isola che li separa.
+* **Ramo V:** le prime 60 sezioni del Brenta vecchio, fino all'ex V03008, che diventa **V03000**. Geometrie invariate.
+* **Eliminate:** S16180, S16231, la vecchia S16282 e tutte le sezioni a valle, oltre alla V03058.
+* **Ramo B:** 354 sezioni nuove, da **B00000** (s = 16 269.75 m sull'asta, 11.75 m più a monte della vecchia S16282) a **B17650**. La B00050 cade a s = 16 319.75 m, 8.2 m prima del ponte e a 5.0 m dai suoi incroci con i piedi di sponda. Le posizioni sono state ottimizzate con lo stesso metodo del 9 novembre (candidati ogni 0.25 m, passo 49.5–50.5 m), aggiungendo una penalità per i piedi a meno di 5 m da un incrocio tra nodestring e breakline. Una soluzione con B00000 32 m più a monte costava meno, ma è stata scartata perché spostava l'inizio del ramo più di quanto chiesto.
+* **Riproducibilità.** I bankpoint del ramo B sono stati calcolati con la stessa catena di script. Rilanciata su otto sezioni esistenti, la riproduce esattamente, salvo due lati spostati di 5 e 12 cm (S16382 sx e S16432 sx). Lì la nuova versione applica alla lettera il margine di 0.5 m dagli ostacoli.
+* **Limite di ricerca ricostruito.** Il passo che fermava la ricerca 0.5 m prima di nodestring e linee interne non era mai stato salvato come script: l'ho ricostruito. Adesso ferma la ricerca anche prima del piede di un altro letto a qualsiasi distanza. Prima lo faceva solo entro 17 m, e nei tratti a due canali la sezione B01600 attraversava l'isola fino al secondo letto.
+* **Sezioni contro gli edifici di Borgo.** B00100, B00150 e B00250 terminano su un lato 0.5 m prima di un edificio. B00200 ha gli edifici su entrambi i lati, quindi non attraversa nessuna breakline.
+
+### Regola dei 5 m
+
+Gli incroci non si spostano mai: ogni punto in cui una sezione o una nodestring incrocia una breakline è stato inserito come vertice fisso della breakline. Prima ancora ho reso espliciti gli 87 innesti a T, cioè le linee che terminavano sul tratto interno di un'altra linea senza un vertice in comune. Senza questo passo, togliere un vertice poteva staccarle e fondere due regioni, come è successo in una prima prova.
+
+Poi, per ogni incrocio:
+
+* i vertici intermedi entro 5 m sono stati tolti;
+* i nodi condivisi con altre linee sono stati portati sull'incrocio insieme alle linee collegate;
+* quando un nodo stava sul piede opposto, l'ho fatto scorrere lungo la sua linea fino a 5 m.
+
+Ogni singola operazione è stata accettata solo se:
+
+* non deformava la rete di linee di più di 2 m;
+* non creava nuovi incroci tra linee;
+* non toccava vertici che stanno su una nodestring;
+* non avvicinava una linea a un punto regione sotto 1 m, o sotto la sua distanza di prima se era già minore.
+
+Una prima versione senza quest'ultimo controllo portava una linea a 6 cm dal punto originale 57.
+
+Nei letti larghi meno di 5 m l'incrocio con il piede opposto della stessa sezione cade entro 5 m. Quello è un nodo della sezione stessa e non viene contato come violazione.
+
+Due casi sono stati risolti come chiesto per il punto 485:
+
+* **Punto 485:** la breakline 1225, che separa il letto dalla sorgente `source_brenta_nuovo`, è stata portata esattamente sulla N15050 (ex S15120). I suoi estremi scorrono di 0.29 e 0.17 m lungo i piedi. La striscia sottile che conteneva il punto 485 non esiste più.
+* **Sorgente `source_3_brenta_3`:** la N11750 (ex S11804) attraversava la striscia di sorgente, larga circa 7 m, delimitata dalle linee 987 e 988. La 987 è stata portata sulla sezione e la 988 fatta scorrere lungo i piedi fino a 5.05 m dagli incroci. La striscia ora è larga circa 5 m.
+
+Sono state modificate 547 breakline: 238 vertici rimossi, 58 nodi portati sugli incroci, 4 nodi fatti scorrere. Restano **9 violazioni** su 1469 incroci, che non si possono risolvere senza spostare nodestring o deformare le linee oltre il limite:
+
+* N16000, a 3.13 e 3.06 m: sono gli incroci della `check_portata_Brenta_nuovo` con i piedi;
+* B00000 (4.30 m), B00100 (1.40 m), B00350 (3.38 m) e B00450 (4.22, 4.60 e 4.60 m), tra i muri, le paratoie e gli edifici di Borgo. Per la B00100 la correzione è stata rifiutata perché avrebbe portato una linea a 6 cm dal punto originale 57;
+* B13100 (4.37 m).
+
+### Punti regione
+
+Il grafo finale ha **902 facce**, ognuna con un punto, più la coppia 57/58 già presente nei dati originali.
+
+* **Punti tolti:** 31. Tra questi il 485, la cui striscia è sparita, e il 568, rimasto nella faccia del Ponte Bordignon ora che non c'è più una sezione sul ponte. Gli altri 29 sono punti creati il 9 novembre, rimasti doppioni o troppo vicini a una sezione dopo il riposizionamento del ramo B.
+* **Punti nuovi:** 28, con gli attributi della regione originale da cui deriva la faccia: 24 `bed`, 3 `bed_borgo` e 1 `sponda_antro`. Quest'ultimo serve all'isola tagliata dalla N16050.
+* **Punti originali:** tutti presenti e non spostati, anche quelli nelle strisce di muro larghe meno di 2 m, dove nessun punto può stare a 1 m dalle linee.
+* **Punto 504:** quello spostato dall'utente resta, a 1.26 m dalle linee.
+
+### File scritti
+
+Prima di scrivere ho fatto una copia datata (`*_backup_20261117.gpkg`) di ognuno dei sei file `_50m`, verificata con SHA-256. L'utente aveva chiuso i layer in QGIS. Gli originali `breaklines`, `boundary` e `regioni_ponti` non sono stati toccati.
+
+| File | Contenuto |
+|---|---|
+| `breaklines_50m.gpkg` | 547 linee modificate per la regola dei 5 m e per i punti 485 e `source_3_brenta_3` |
+| `boundary_50m.gpkg` | Le 53 nodestring, identiche a prima, più le 735 sezioni N, V e B; 788 feature |
+| `regioni_ponti_50m.gpkg` | 905 righe, di cui 903 con geometria |
+| `centerline_50m.gpkg` | Tre linee: `N_caldonazzo_borgo` (16 130.0 m), `V_brenta_vecchio` (3 008.3 m), `B_borgo_valle` (17 711.2 m). Nuovi campi `ramo` e `s0_asta`, la progressiva sull'asta da cui parte B |
+| `centerpoints_50m.gpkg` | 735 punti; `stream` vale N, V o B; `s_m` è la progressiva nel ramo |
+| `bankpoints_50m.gpkg` | 1470 punti. I due lati allungati dall'utente hanno `tipo` e `regola` = `manuale` e la quota della cella DTM nella nuova posizione |
+
+Ho rigenerato anche la tabella `docs/Brenta_sections_50m_mesh10.csv` dai file nuovi. Ha 735 righe e una colonna in più, `ramo`.
+
+Gli script usati sono in `scripts/`, descritti in `docs/scripts/README.md`.
+
+### Verifiche (sui file riletti dal disco, con codice separato)
+
+1. **Conteggi:** breakline 1284, boundary 788 (53 + 735), regioni 905, punti d'asse 735, bankpoint 1470, linee d'asse 3.
+2. **Nomi:** N00050–N16050 (321), V00050–V03000 (60), B00000–B17650 (354). Multipli di 50 consecutivi, tutti univoci.
+3. **Nodestring:** le 53 non di sezione sono identiche a prima, comprese le modifiche dell'utente.
+4. **Sezioni e bankpoint:** ogni sezione ha due vertici, identici ai suoi bankpoint, da sinistra a destra.
+5. **Passo:** lungo la linea d'asse sempre tra 49.75 e 50.50 m. In linea retta l'unica eccezione è quella già nota, N01900 (46.68 m).
+6. **Ponte Bordignon:** la B00050 sta 8.22 m a monte del ponte lungo la linea d'asse, e a 7.83 m nel punto più vicino.
+7. **Incroci tra sezioni:** nessuna sezione ne incrocia un'altra o una nodestring.
+8. **Regola dei 5 m:** 9 violazioni su 1469 incroci, quelle elencate sopra.
+9. **Incroci fermi:** tutti gli incroci delle sezioni stanno sulle breakline di prima, salvo la 987 e la 1225, che ora coincidono con le sezioni N11750 e N15050. Anche gli incroci tra nodestring e breakline sono rimasti al loro posto.
+10. **Breakline:** 717 identiche a prima, 547 modificate. Il campo `id` è invariato.
+11. **Grafo finale:** 902 facce, nessuna senza punto. L'unica con due punti è quella preesistente (57/58).
+12. **Punti regione originali:** tutti presenti e non spostati.
+13. **Struttura dei file:** `integrity_check` ok, sistema di riferimento 25832. Nei sei file l'indice spaziale conta tante voci quante geometrie, tranne `breaklines_50m`: lì 6 geometrie vuote (fid 447, 902, 917, 967, 1209, 1223) non sono indicizzate, esattamente come nel backup.
+14. **Originali:** l'impronta SHA-256 di `breaklines`, `boundary` e `regioni_ponti` è invariata.
+
+### Revisione: linee dei muri bloccate ed eccezioni
+
+Dopo aver visto il risultato, l'utente ha deciso che:
+
+* la N16000 resta così, come **eccezione**;
+* anche la B13100 diventa un'**eccezione**;
+* tutte le breakline che delimitano le regioni con `mat_id` 11 (le 20 strisce `muro` di Borgo, in 19 facce) devono restare **fisse**, cioè com'erano prima della correzione;
+* le violazioni che restano le sistema lui a mano.
+
+Le linee dei muri sono 32: quelle che condividono più di 1 cm con il contorno di una faccia di muro, compresi i piedi su cui i muri poggiano. La correzione ne aveva modificate 13.
+
+Ripristinarle una per una non bastava: alcuni nodi condivisi con le linee vicine si erano spostati insieme a loro. Ho quindi rifatto la correzione dei 5 m con queste linee bloccate. Non vi si inseriscono vertici d'incrocio né d'innesto, non si toglie nessun vertice (nemmeno i due doppi già presenti sulla 893) e nessun loro nodo può essere spostato.
+
+Ho riportato i sei file `_50m` allo stato di stamattina usando i backup del 17 novembre, verificati identici, e li ho riscritti. I punti regione, le sezioni e i file d'asse non cambiano rispetto alla versione precedente.
+
+Le breakline modificate ora sono 533, e le 32 linee dei muri sono identiche byte per byte al backup. Restano **15 violazioni** su 1468 incroci:
+
+* le eccezioni: N16000 (3.13 e 3.06 m) e B13100 (4.37 m);
+* 12 nella zona dei muri di Borgo, da sistemare a mano:
+  * B00000 (3.38 e 3.07 m);
+  * B00050 (3.89 m);
+  * B00100 (0.07 m);
+  * B00150 (4.14 m);
+  * B00250 (0.27 m);
+  * B00350 (3.38 e 3.17 m);
+  * B00400 (4.39 m);
+  * B00450 (4.17 e 1.34 m);
+  * B00500 (2.92 m).
+
+  B00100 e B00250 hanno un vertice a pochi centimetri dall'incrocio e possono generare elementi molto piccoli.
+
+Ho rifatto le verifiche sui file riletti dal disco, con lo stesso esito di prima. Sono cambiati solo il numero di violazioni (15) e quello delle breakline modificate (533). Il grafo ha sempre 902 facce, ognuna con il suo punto, e gli incroci sono tutti al loro posto.
+
+### Questioni aperte
+
+* **Regola dei 5 m.** Restano le 12 violazioni nella zona dei muri di Borgo (B00000–B00500), che l'utente sistema a mano. N16000 e B13100 sono eccezioni accettate.
+* **B00200.** Non attraversa nessuna breakline, quindi non divide il letto: è solo una linea di controllo.
+* **Mesh e modello.** La mesh va rigenerata dai file `_50m`. `STRINGDEF` deve elencare le 735 sezioni con i nuovi nomi; i vecchi nomi `S*****` e `V*****` non esistono più.
+
+## 18 novembre 2026
+
+### La richiesta
+
+Mentre sistemava a mano le violazioni di Borgo, l'utente ha chiesto che la sezione **B00400 coincida esattamente con la nodestring `idrometro_Borgo`**. È il punto più importante del modello: lì anche nella realtà si misurano le portate (dai livelli) considerate più affidabili. Per arrivarci tutte le sezioni B vanno spostate verso monte dei circa 16 m che separavano le due linee, senza toccare N e V.
+
+L'utente si aspettava due soli punti delicati, oltre alla zona interna di Borgo che sistema lui: i ponti Bordignon e Filippini. Secondo le sue misure, in entrambi i casi la sezione di valle non doveva finire dentro il ponte.
+
+### Punto di partenza
+
+* Breakline e punti regione erano quelli scritti il 17 novembre.
+* Nel boundary l'utente aveva modificato in mattinata sette sezioni B: B00000, B00050, B00100, B00150, B00200, B00250 e B00350. Con lo spostamento queste modifiche si perdono, ma lo stato della mattina è conservato nei backup `*_backup_20261118.gpkg`.
+* Le altre 53 nodestring erano identiche a quelle del 17. `idrometro_Borgo` ha due vertici ed è lunga 11.61 m.
+
+### Lo spostamento
+
+`idrometro_Borgo` incrocia la linea d'asse alla progressiva 16 655.68 m dell'asta, mentre la vecchia B00400 stava a 16 672.25 m: lo spostamento è di **16.57 m**.
+
+Un primo tentativo con la programmazione dinamica libera, con la sola B00400 fissata, non andava bene. Dopo qualche chilometro la sequenza tornava sulle posizioni vecchie: 254 sezioni su 354 restavano dov'erano. L'ho scartato perché l'utente aveva chiesto di spostare tutto il ramo.
+
+Ho quindi scritto `dpB2.py`. Ogni sezione ha come obiettivo la sua posizione vecchia meno 16.57 m e si sceglie tra i candidati entro 5 m dall'obiettivo, con un costo di 0.5 per metro di scarto e le stesse penalità di `dpB.py`. La B00400 è proprio la nodestring.
+
+* **Curva stretta attorno alla progressiva 27 470 m.** Spostando tutto di 16.6 m, la coppia B11200–B11250 sta a cavallo della curva. Lungo la linea d'asse distano 50 m, in linea retta solo 47.85 m. Nessuna posizione entro 10 m dall'obiettivo rispetta anche la retta, quindi la distanza in linea retta è diventata una penalità e non più un vincolo rigido. La regola dei 50 ± 0.5 m resta rigida lungo la linea d'asse.
+* **Fine del ramo.** Dopo lo spostamento ci sarebbe stato posto per una sezione in più in coda, ma sarebbe caduta a 12 m da `BC_brenta_valle`, ruotata di circa 30° e con il bankpoint destro sul bordo del dominio. Non l'ho aggiunta. Le sezioni B restano 354 e la B17650 sta ora 57.6 m a monte della fine della linea d'asse.
+
+Risultato:
+
+* spostamento tra 15.9 e 17.25 m;
+* passo lungo la linea d'asse tra 49.75 e 50.5 m;
+* B00000 alla progressiva 16 253.25 m dell'asta (era 16 269.75 m);
+* nomi invariati, da B00000 a B17650. La B00400 sta a 402.43 m dall'inizio del ramo.
+
+### I ponti
+
+Nessuna sezione B attraversa una nodestring, tranne la B00400 che coincide con `idrometro_Borgo`. Nessuna cade dentro un ponte.
+
+| Ponte | Sezione a monte | Sezione a valle |
+|---|---|---|
+| Bordignon | B00050, 24.2 m dal lato di monte | B00100, 20.4 m dal lato di valle |
+| Filippini | B16950, 26.3 m dal lato di monte | B17000, 8.8 m dal lato di valle |
+
+Le distanze sono quelle minime tra le linee. Le misure dell'utente erano corrette.
+
+### Bankpoint
+
+Ho rifatto la catena del 17 novembre con le nuove posizioni: `export_B.py` (ora accetta `dpB2.pkl`), `next_bed.py` (3 limiti), `obst.py` (66 limiti) e `bank.py`.
+
+La B00400 è sostituita dalla nodestring in `assemble.py`. I suoi due bankpoint sono gli estremi di `idrometro_Borgo`, con `tipo` `nodestring` e `regola` `idrometro_Borgo`. Le quote lette dal DTM sono 379.763 m a sinistra e 378.068 m a destra.
+
+Le sezioni N e V sono risultate identiche a quelle del 17.
+
+### Regola dei 5 m e punti regione
+
+Ho rifatto la correzione dei 5 m (`fix5.py`, con le 32 linee dei muri bloccate) partendo dalle breakline della mattina del 17, come il giorno prima. Il risultato:
+
+* 535 breakline modificate. Rispetto al risultato del 17 ne cambiano 114, tutte lungo il ramo B;
+* le 32 linee dei muri sono identiche al backup;
+* nessun incrocio si è spostato.
+
+Restano **11 violazioni su 1471 incroci**:
+
+* l'eccezione N16000 (3.13 e 3.06 m);
+* 9 nella zona dei muri di Borgo:
+  * B00000 (1.47 m);
+  * B00100 (2.34 e 1.05 m);
+  * B00300 (2.23 e 2.47 m);
+  * B00350 (2.21 m);
+  * B00400 (3.57 m);
+  * B00450 (2.89 m);
+  * B00500 (1.43 m).
+
+  Sei riguardano vertici delle linee dei muri, che sono bloccate. La B00450 riguarda un vertice fisso su una nodestring. Le due della B00300 sono state respinte dai controlli: lo spostamento avrebbe superato i 2 m, oppure avrebbe portato una linea troppo vicino a un punto regione. Quella della B00400 è un vertice della linea di muro 916, a 3.57 m dall'incrocio con `idrometro_Borgo`, quindi c'era già prima.
+
+Con lo spostamento la B13100 non ha più violazioni, quindi l'eccezione non serve più.
+
+Il grafo ha **901 facce**, una in meno del 17: la striscia tra la vecchia B00400 e `idrometro_Borgo` non esiste più. Ogni faccia ha un solo punto, tranne la coppia 57/58 già presente. Rispetto alla mattina del 17 sono stati tolti 55 punti nuovi e aggiunti 51. Tutti i punti originali sono presenti e non sono stati spostati.
+
+### Scrittura e verifiche
+
+Ho seguito questi passi:
+
+1. ho copiato lo stato corrente dei sei layer in `*_backup_20261118.gpkg` e l'ho verificato con `cmp`;
+2. ho riportato i layer ai backup del 17 mattina;
+3. ho lanciato `write2.py`, che ha trovato i backup del 17 identici.
+
+`verify2.py` sui file riletti dal disco ha dato questi risultati:
+
+* 735 sezioni (N 321, V 60, B 354) con nomi consecutivi;
+* le 53 nodestring identiche;
+* sezioni coincidenti con i bankpoint;
+* passo lungo la linea d'asse tra 49.75 e 50.5 m;
+* nessun incrocio tra sezioni;
+* un solo incrocio sezione-nodestring, cioè la B00400 sovrapposta a `idrometro_Borgo`;
+* nessun incrocio con le breakline perso;
+* integrità dei GeoPackage verificata;
+* impronte degli originali invariate.
+
+Gli altri due esiti segnalati sono quelli noti: le linee 987 e 1225 posate sulle sezioni e le 6 geometrie vuote delle breakline.
+
+Ho rigenerato `docs/Brenta_sections_50m_mesh10.csv` con il nuovo script `sections_csv.py`. Prima di usarlo ho controllato che, applicato ai backup del 18, riproducesse la tabella del 17: le uniche differenze erano le lunghezze delle sette sezioni modificate a mano in mattinata.
+
+### Questioni aperte
+
+* **Regola dei 5 m.** Restano le 9 violazioni nella zona dei muri di Borgo (B00000–B00500), che l'utente sistema a mano. La N16000 resta un'eccezione.
+* **Passo in linea retta B11200–B11250:** 47.85 m nella curva stretta, da confermare come eccezione al pari della N01900.
+* **Fine del ramo B:** la B17650 sta a 57.6 m dalla fine della linea d'asse.
+* **Mesh e modello.** La mesh va rigenerata dai file `_50m`, e `STRINGDEF` deve usare i nomi nuovi. La B00400 ha la stessa geometria di `idrometro_Borgo`, quindi va verificato come BASEmesh e BASEMENT trattano due nodestring coincidenti.
+
+## 18 novembre 2026, pomeriggio: Borgo sistemato a mano, attributi ed eccezioni
+
+### Cosa ha fatto l'utente
+
+L'utente ha sistemato a mano in QGIS le sezioni nella zona dei muri di Borgo. Rispetto alla scrittura della mattina:
+
+* sono cambiate 11 sezioni: B00000, B00050, B00150, B00200, B00250, B00300, B00350, B00400, B00450, B00500 e B00550;
+* B00400 e `idrometro_Borgo` sono state allungate insieme verso destra (da 11.61 a 13.15 m) e restano coincidenti;
+* molte sezioni ora terminano esattamente sulle linee dei muri o sulle nodestring degli edifici, invece di fermarsi 0.5 m prima;
+* B00300 è stata spostata di circa 6 m: il suo punto d'asse è salito di 3.36 m;
+* breakline e punti regione non sono cambiati.
+
+### Centerpoint e bankpoint
+
+Con il nuovo script `sync_cp_bp.py` ogni punto d'asse diventa l'intersezione della sezione con la linea d'asse del suo ramo. Da lì si ricalcolano `s_m`, `dist_next` e `dist_cp`. Un bankpoint il cui vertice si è spostato prende `tipo` e `regola` `manuale` e la quota della cella del DTM; per la B00400 diventa `nodestring`/`idrometro_Borgo`.
+
+* **Bankpoint:** ne cambiano 20, tutti nelle sezioni modificate.
+* **Punti d'asse:** cambiano B00300 (3.36 m), B00150, B00200, B00250, B00350, B00400 e B00500 (1–5 mm), più N00150 (2.5 cm) e N01950 (5 mm). Queste ultime due sono le sezioni modificate a mano prima del 17 novembre, che non passavano più esattamente per il loro punto d'asse.
+* **Linea del ramo B:** non cambia, perché la B00000 incrocia l'asta nello stesso punto.
+
+`write3.py` ha scritto i tre layer dopo i backup `*_backup_20261118b.gpkg` e ha letto 20 quote dal DTM.
+
+### Controllo di tutti gli attributi e delle regioni
+
+Il nuovo `verify3.py` controlla sui file riletti dal disco ogni attributo di boundary, linee d'asse, punti d'asse, bankpoint e punti regione. Alla prima esecuzione ha trovato quattro problemi, nati tutti dalle modifiche a mano:
+
+1. **Quota della B00300.** Il primo vertice aveva z = 381.76, preso agganciandolo a `edificio_borgo_sx_2`. Le sezioni devono avere z = m = 0. Le quote diverse da 0 di `link_borgo_valle`, `edificio_borgo_sx_1`, `edificio_borgo_sx_2` e delle breakline 971, 1125, 1127 e 1135 ci sono già nei dati originali, e le ho lasciate.
+2. **B00400.** Allungata, incrociava la breakline 895 a 2.0 mm dal nodo delle linee 894/895, cioè il vecchio estremo dell'idrometro.
+3. **B00500.** Ruotata, incrociava la 895 a 1.2 mm da un suo vertice.
+
+   Nei casi 2 e 3 la mesh avrebbe avuto un lato di un paio di millimetri.
+4. **Punti regione.** Prolungando le sezioni fino ai muri si sono chiuse 5 nuove facce di letto tra B00100 e B00400, da 490 a 880 m², senza punto regione. Il grafo è passato da 901 a 906 facce.
+
+Con il nuovo `fix_manual.py`, poi scritto da `write3.py` dopo i backup `*_backup_20261118c.gpkg`:
+
+* ho portato a 0 la quota della B00300;
+* ho spostato i due vertici di breakline sull'incrocio (2.0 e 1.2 mm), secondo la regola per cui si sposta la breakline e mai la nodestring. Nessuna delle due linee è un muro bloccato;
+* ho aggiunto 5 punti `bed_borgo` (`mat_id` 13, `max_area` 5, fid 972–976) nel polo di inaccessibilità di ogni faccia, a 4.9–7.1 m dai bordi. Gli attributi vengono dalla regione originale del luogo, il fid 134.
+
+Ho poi rilanciato `sync_cp_bp.py`, che non ha trovato nulla da cambiare, e i controlli.
+
+**Esito finale di `verify3.py` e `verify3_dtm.py`**
+
+* **Conteggi:** 53 nodestring e 735 sezioni con nomi, fid e id regolari; 735 punti d'asse, 1470 bankpoint, 3 linee d'asse e 909 righe di punti regione.
+* **Sezioni:** sono tutte a due vertici, con z = 0 e orientate da sinistra a destra. Nessuna incrocia un'altra sezione.
+* **Contatti con le nodestring:** la B00400 coincide con `idrometro_Borgo`. B00150, B00200, B00250, B00300 e B00350 terminano su una nodestring di edificio senza attraversarla.
+* **Punti d'asse:** stanno tutti sulla loro sezione e sulla linea d'asse, con `s_m` e `dist_next` coerenti.
+* **Bankpoint:** coincidono tutti con i vertici delle sezioni. `s_m`, `dist_cp`, `tipo`, `regola` e `prom` sono coerenti, e `z_dtm` è uguale alla cella del DTM per tutti i 1470 punti, con differenza massima 0.
+* **Tipi di bankpoint:**
+  * `max` 1028 (713 `mid`, 315 `toe15`);
+  * `fallback` 419;
+  * `manuale` 21 (19 a Borgo, più N00150 sx e N01950 sx);
+  * `nodestring` 2 (B00400).
+* **Punti regione:**
+  * 906 facce, ognuna con un punto, tranne la coppia 57/58 già presente; nessun punto fuori dalle facce;
+  * geometrie nulle solo ai fid 65 e 135, come negli originali;
+  * i punti originali sono presenti, non spostati e con gli stessi attributi, tranne il 41 sostituito il 9 novembre;
+  * nessun attributo nullo e nessuna combinazione di attributi che non esista negli originali;
+  * a meno di 1 m dalle linee ci sono solo punti originali nelle strisce dei muri;
+  * l'unico nuovo punto con un nome diverso da quello della regione originale nello stesso luogo è il 504, sistemato dall'utente il 17.
+* **GeoPackage:** l'integrità è a posto e le impronte degli originali sono invariate.
+* **Rimasto fuori dalle eccezioni:**
+  * **11 incroci a Borgo con un vertice di una linea dei muri entro 5 m:** B00000 (1.47 m), B00100 (2.34 e 1.05 m), B00150 (2.47 m), B00200 (2.18 m), B00300 (3.21, 0.87 e 0.87 m), B00400 (3.57 m), B00450 (2.89 m) e B00500 (1.42 m). Quei vertici sono bloccati;
+  * **tre passi lungo la linea d'asse oltre i 50.5 m di 4–5 mm:** N01950–N02000, B00150–B00200 e B00450–B00500.
+
+  Nessun altro incrocio ha vertici entro 5 m.
+
+Ho rigenerato `docs/Brenta_sections_50m_mesh10.csv` con `sections_csv.py`.
+
+### Eccezioni
+
+L'utente ha fissato l'elenco delle eccezioni, che comprende tutte e sole queste sezioni:
+
+* **regola dei 5 m:** N16000;
+* **passo tra sezioni:**
+  * N01900–N01950 (46.68 m in linea retta);
+  * B11200–B11250 (47.85 m in linea retta);
+  * B00250–B00300–B00350, perché la B00300 è stata spostata a mano (47.14 e 53.61 m lungo la linea d'asse).
+
+La B13100 non è più un'eccezione. Le stesse eccezioni sono scritte in `verify3.py` e in `dx_dev.py`.
+
+### Revisione: incroci vicini ai muri accettati come eccezioni
+
+L'utente ha accettato come eccezioni della regola dei 5 m gli 11 incroci di Borgo che hanno un vertice di una linea dei muri entro 5 m. Riguardano le sezioni B00000, B00100, B00150, B00200, B00300, B00400, B00450 e B00500. La categoria della regola dei 5 m comprende quindi la N16000 e queste otto sezioni; la categoria del passo resta invariata.
+
+Ho aggiornato le eccezioni in `verify3.py` e in `dx_dev.py`. `verify3.py` ora conferma che gli incroci entro 5 m sono esattamente quelli delle eccezioni. Resta segnalato solo il controllo del passo, per le tre coppie a 50.504–50.505 m.
+
+### Analisi statistica del passo tra le sezioni
+
+L'analisi riguarda il passo dx tra sezioni consecutive dello stesso ramo, cioè 732 coppie: 320 nel ramo N, 59 nel V e 353 nel B. È svolta su due livelli:
+
+* **Analisi 1, locale:** misura quanto ogni sezione è inclinata rispetto alla successiva;
+* **Analisi 2, globale:** misura quanto il passo più corto di un ramo, o dell'intero modello, è inferiore al passo medio. È questa che conta per un modello 1D: con uno schema esplicito per equazioni iperboliche il passo temporale ammesso dalla condizione CFL, dt ≤ CFL · dx / (|u| + c), lo fissa il dx più piccolo.
+
+Lo script è `dx_dev.py`; i valori di ogni coppia sono in `docs/Brenta_dx_dev_50m.csv`. Le statistiche sono date due volte:
+
+* **tutte le coppie;**
+* **senza eccezioni:** si escludono le 19 coppie che contengono almeno una sezione in eccezione:
+  * N01850–N01900, N01900–N01950, N01950–N02000;
+  * N15950–N16000, N16000–N16050;
+  * le undici coppie da B00000–B00050 a B00500–B00550;
+  * B11150–B11200, B11200–B11250, B11250–B11300.
+
+#### Grandezze per coppia
+
+Per la coppia i, formata dalle sezioni k e k+1:
+
+| Simbolo | Significato |
+|---|---|
+| dx_avg,i | distanza media tra le due sezioni. Ognuna si campiona in 201 punti equidistanti, per ogni punto si misura la distanza dall'altra sezione, e si fa la media su entrambe |
+| dx_min,i | distanza minima tra i due segmenti |
+| dx_max,i | distanza massima tra i punti campionati |
+| dx_c,i | distanza lungo la linea d'asse (`dist_next`) |
+| angolo | angolo tra le due sezioni |
+| larghezza | lunghezza media delle due sezioni |
+
+dx_avg e dx_c differiscono in media di 0.19 m, ma nelle curve strette lo scarto arriva a 8.6 m (B11200–B11250).
+
+#### Analisi 1: inclinazione tra sezioni consecutive
+
+**dx_dev,i = (dx_avg,i − dx_min,i) / dx_avg,i**
+
+Vale 0 per due sezioni parallele e cresce quando convergono da un lato.
+
+| Insieme | Coppie | Media | Mediana | Dev. std | 90° perc. | 95° perc. | 99° perc. | Max | > 0.01 | > 0.02 | > 0.05 | > 0.10 | Angolo medio (°) | Larghezza media (m) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| N, tutte | 320 | 0.0070 | 0.0011 | 0.0160 | 0.0172 | 0.0327 | 0.0664 | 0.1617 | 60 | 25 | 11 | 2 | 2.39 | 20.9 |
+| V, tutte | 59 | 0.0120 | 0.0084 | 0.0123 | 0.0267 | 0.0342 | 0.0547 | 0.0580 | 24 | 10 | 2 | 0 | 3.77 | 19.7 |
+| B, tutte | 353 | 0.0333 | 0.0203 | 0.0363 | 0.0857 | 0.1026 | 0.1577 | 0.2482 | 245 | 177 | 81 | 19 | 5.00 | 48.0 |
+| **Totale, tutte** | 732 | 0.0201 | 0.0079 | 0.0304 | 0.0623 | 0.0868 | 0.1412 | 0.2482 | 329 | 212 | 94 | 21 | 3.76 | 33.9 |
+| N, senza eccezioni | 315 | 0.0065 | 0.0011 | 0.0135 | 0.0170 | 0.0323 | 0.0644 | 0.1095 | 56 | 24 | 10 | 1 | 2.24 | 20.9 |
+| V, senza eccezioni | 59 | 0.0120 | 0.0084 | 0.0123 | 0.0267 | 0.0342 | 0.0547 | 0.0580 | 24 | 10 | 2 | 0 | 3.77 | 19.7 |
+| B, senza eccezioni | 339 | 0.0333 | 0.0207 | 0.0349 | 0.0864 | 0.1012 | 0.1517 | 0.1804 | 235 | 173 | 79 | 18 | 4.79 | 49.2 |
+| **Totale, senza eccezioni** | 713 | 0.0197 | 0.0075 | 0.0290 | 0.0621 | 0.0849 | 0.1372 | 0.1804 | 315 | 207 | 91 | 19 | 3.58 | 34.2 |
+
+Le 15 coppie con dx_dev più alto:
+
+| Coppia | dx_c (m) | dx_avg (m) | dx_min (m) | dx_max (m) | dx_dev | Angolo (°) | Larghezza (m) | Eccezione |
+|---|---|---|---|---|---|---|---|---|
+| B11200–B11250 | 50.50 | 41.86 | 31.47 | 57.18 | 0.2482 | 42.9 | 36.1 | sì |
+| B11600–B11650 | 49.75 | 50.79 | 41.63 | 61.04 | 0.1804 | 9.6 | 111.7 | |
+| B16250–B16300 | 49.75 | 51.33 | 42.62 | 63.72 | 0.1697 | 15.6 | 67.7 | |
+| N01900–N01950 | 50.49 | 44.65 | 37.43 | 58.33 | 0.1617 | 50.0 | 28.5 | sì |
+| B04950–B05000 | 50.00 | 47.14 | 39.61 | 60.03 | 0.1596 | 26.1 | 57.0 | |
+| B05300–B05350 | 50.25 | 50.93 | 42.98 | 59.74 | 0.1560 | 14.0 | 68.8 | |
+| B16300–B16350 | 49.75 | 50.61 | 43.29 | 58.58 | 0.1446 | 15.0 | 59.9 | |
+| B11050–B11100 | 50.50 | 50.91 | 43.67 | 59.93 | 0.1422 | 23.6 | 41.5 | |
+| B02600–B02650 | 50.50 | 45.82 | 39.45 | 53.95 | 0.1390 | 35.4 | 27.3 | |
+| B12150–B12200 | 49.75 | 50.75 | 43.75 | 58.01 | 0.1380 | 6.3 | 131.6 | |
+| B11000–B11050 | 50.50 | 50.01 | 43.47 | 57.27 | 0.1308 | 19.9 | 42.0 | |
+| B14000–B14050 | 50.50 | 50.25 | 44.08 | 58.07 | 0.1228 | 28.0 | 32.0 | |
+| B01550–B01600 | 50.25 | 46.54 | 41.16 | 55.76 | 0.1157 | 32.2 | 37.9 | |
+| B04900–B04950 | 50.00 | 48.05 | 42.58 | 54.94 | 0.1138 | 19.3 | 38.3 | |
+| B12100–B12150 | 49.75 | 50.42 | 44.86 | 56.46 | 0.1102 | 5.1 | 135.3 | |
+
+**Come leggere l'analisi 1**
+
+* **Sezioni quasi parallele.** In mediana dx_dev vale 0.8%, circa 0.4 m su 50 m. Nel 90% delle coppie resta sotto il 6.2%, e solo 21 coppie su 732 superano il 10%.
+* **Peso delle eccezioni.** Toglierle cambia poco la media (da 0.0201 a 0.0197) ma abbassa il massimo da 0.248 a 0.180. Le due curve strette N01900–N01950 e B11200–B11250 sono i casi peggiori dei rispettivi rami. Le sezioni di Borgo hanno valori bassi (0.003–0.025), perché lì il letto è stretto.
+* **Ramo B.** Ha valori circa 5 volte più alti del ramo N, per la geometria:
+  * le sezioni sono larghe in media 48 m, contro 21, e arrivano a 178 m;
+  * l'angolo medio tra sezioni consecutive è 5.0°, contro 2.4°.
+
+  dx_dev cresce come larghezza · tan(angolo) / dx_avg. La correlazione con questa grandezza è 0.96, con il solo angolo 0.79 e con la sola larghezza 0.43.
+* **Due tipi di casi.** I valori alti nascono o da un angolo grande (B11200–B11250: 43°, N01900–N01950: 50°) o da una sezione molto larga con un angolo piccolo (B12150–B12200: 6° su 132 m).
+
+#### Analisi 2: passo minimo rispetto al passo medio
+
+Partendo dalla serie dei dx_avg,i di un insieme di coppie (un ramo, o tutto il modello):
+
+**dx_dev_abs = (media dx_avg − min dx_avg) / media dx_avg**
+
+È positivo o nullo. 1 − dx_dev_abs = min/media è, a parità di velocità, il rapporto tra il dt imposto dalla CFL con il passo più corto e quello che si avrebbe con il passo medio. La stessa grandezza è calcolata anche sulla serie dei dx_c (passo lungo la linea d'asse) e su quella dei dx_min (caso peggiore, il punto in cui due sezioni si avvicinano di più).
+
+| Insieme | Coppie | Media dx_avg (m) | Dev. std (m) | Min dx_avg (m) | Coppia del min | Max dx_avg (m) | dx_dev_abs | min/media | dx_dev_abs su dx_c | dx_dev_abs su dx_min |
+|---|---|---|---|---|---|---|---|---|---|---|
+| N, tutte | 320 | 50.18 | 0.48 | 44.65 | N01900–N01950 | 50.84 | 0.1103 | 0.890 | 0.0099 | 0.2490 |
+| V, tutte | 59 | 50.08 | 0.37 | 49.07 | V02800–V02850 | 51.73 | 0.0202 | 0.980 | 0.0078 | 0.0602 |
+| B, tutte | 353 | 49.99 | 0.79 | 41.86 | B11200–B11250 | 53.12 | 0.1625 | 0.838 | 0.0583 | 0.3488 |
+| **Totale, tutte** | 732 | 50.08 | 0.65 | 41.86 | B11200–B11250 | 53.12 | **0.1641** | 0.836 | 0.0600 | 0.3587 |
+| N, senza eccezioni | 315 | 50.20 | 0.37 | 47.58 | N02100–N02150 | 50.84 | 0.0522 | 0.948 | 0.0099 | 0.1065 |
+| V, senza eccezioni | 59 | 50.08 | 0.37 | 49.07 | V02800–V02850 | 51.73 | 0.0202 | 0.980 | 0.0078 | 0.0602 |
+| B, senza eccezioni | 339 | 50.01 | 0.63 | 45.82 | B02600–B02650 | 52.19 | 0.0837 | 0.916 | 0.0059 | 0.1839 |
+| **Totale, senza eccezioni** | 713 | 50.10 | 0.52 | 45.82 | B02600–B02650 | 52.19 | **0.0853** | 0.915 | 0.0078 | 0.1967 |
+
+Distribuzione dello scarto di ogni coppia dalla media del suo insieme, e_i = (dx_avg,i − media) / media:
+
+| Insieme | 1° perc. | 5° perc. | 10° perc. | Mediana | 90° perc. | 95° perc. | 99° perc. | e < −0.02 | e < −0.05 | e < −0.10 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| N, tutte | −0.0262 | −0.0106 | −0.0086 | 0.0014 | 0.0064 | 0.0068 | 0.0097 | 4 | 2 | 1 |
+| V, tutte | −0.0179 | −0.0094 | −0.0074 | −0.0007 | 0.0075 | 0.0085 | 0.0194 | 1 | 0 | 0 |
+| B, tutte | −0.0585 | −0.0206 | −0.0076 | 0.0005 | 0.0117 | 0.0171 | 0.0264 | 20 | 5 | 1 |
+| **Totale, tutte** | −0.0451 | −0.0141 | −0.0078 | 0.0023 | 0.0086 | 0.0106 | 0.0225 | 28 | 6 | 2 |
+| N, senza eccezioni | −0.0198 | −0.0105 | −0.0089 | 0.0011 | 0.0061 | 0.0065 | 0.0095 | 4 | 1 | 0 |
+| V, senza eccezioni | −0.0179 | −0.0094 | −0.0074 | −0.0007 | 0.0075 | 0.0085 | 0.0194 | 1 | 0 | 0 |
+| B, senza eccezioni | −0.0435 | −0.0204 | −0.0077 | 0.0001 | 0.0114 | 0.0167 | 0.0254 | 18 | 3 | 0 |
+| **Totale, senza eccezioni** | −0.0409 | −0.0130 | −0.0078 | 0.0020 | 0.0083 | 0.0102 | 0.0215 | 25 | 4 | 0 |
+
+Sensibilità: dx_dev_abs sull'intero modello togliendo le k coppie più corte.
+
+| Insieme | k = 0 | k = 1 | k = 2 | k = 3 | k = 5 | k = 10 |
+|---|---|---|---|---|---|---|
+| Totale, tutte | 0.1641 | 0.1087 | 0.0854 | 0.0711 | 0.0594 | 0.0415 |
+| Totale, senza eccezioni | 0.0853 | 0.0710 | 0.0593 | 0.0506 | 0.0436 | 0.0355 |
+
+Le 15 coppie con dx_avg più corto, cioè quelle che fissano il dt (e è lo scarto dalla media dell'intero modello, 50.08 m):
+
+| Coppia | dx_avg (m) | e | dx_c (m) | dx_min (m) | dx_dev | Angolo (°) | Eccezione |
+|---|---|---|---|---|---|---|---|
+| B11200–B11250 | 41.86 | −0.1641 | 50.50 | 31.47 | 0.2482 | 42.9 | sì |
+| N01900–N01950 | 44.65 | −0.1085 | 50.49 | 37.43 | 0.1617 | 50.0 | sì |
+| B02600–B02650 | 45.82 | −0.0850 | 50.50 | 39.45 | 0.1390 | 35.4 | |
+| B01550–B01600 | 46.54 | −0.0706 | 50.25 | 41.16 | 0.1157 | 32.2 | |
+| B00250–B00300 | 46.98 | −0.0619 | 47.14 | 46.67 | 0.0066 | 3.2 | sì |
+| B04950–B05000 | 47.14 | −0.0588 | 50.00 | 39.61 | 0.1596 | 26.1 | |
+| N02100–N02150 | 47.58 | −0.0500 | 50.50 | 44.57 | 0.0633 | 41.4 | |
+| B02550–B02600 | 47.77 | −0.0461 | 50.00 | 43.36 | 0.0922 | 20.9 | |
+| B00700–B00750 | 47.93 | −0.0428 | 50.50 | 42.81 | 0.1069 | 24.5 | |
+| N01550–N01600 | 47.96 | −0.0422 | 50.50 | 46.08 | 0.0393 | 33.3 | |
+| B04900–B04950 | 48.05 | −0.0406 | 50.00 | 42.58 | 0.1138 | 19.3 | |
+| B13250–B13300 | 48.05 | −0.0405 | 50.00 | 44.41 | 0.0757 | 7.4 | |
+| B01400–B01450 | 48.31 | −0.0353 | 50.00 | 43.50 | 0.0996 | 22.2 | |
+| B01050–B01100 | 48.35 | −0.0344 | 49.75 | 44.46 | 0.0806 | 17.0 | |
+| B13300–B13350 | 48.49 | −0.0318 | 50.00 | 45.22 | 0.0674 | 12.6 | |
+
+**Altri dati**
+
+* **dx_min più corti:** B11200–B11250 31.47 m, N01900–N01950 37.43, B02600–B02650 39.45, B04950–B05000 39.61, B01550–B01600 41.16, B11600–B11650 41.63, B04900–B04950 42.58, B16250–B16300 42.62, B00700–B00750 42.81, B05300–B05350 42.98.
+* **dx_avg più lunghi:** B00300–B00350 53.12 m (eccezione), B14250–B14300 52.19, V02700–V02750 51.73, B14200–B14250 51.51, B16250–B16300 51.33, B10450–B10500 51.28, B10500–B10550 51.26, B14300–B14350 51.21, B05000–B05050 51.19, B05150–B05200 51.04.
+
+**Come leggere l'analisi 2**
+
+* **Passo molto uniforme.** Il passo medio è 50.08 m con una deviazione standard di 0.65 m. L'80% delle coppie sta tra −0.8% e +0.9% dalla media (10° e 90° percentile).
+* **Un solo caso fissa il dt.** dx_dev_abs sull'intero modello vale 0.164: il passo minimo, B11200–B11250, è il 16% più corto della media. Togliendo quella sola coppia scende a 0.109 (N01900–N01950), e togliendo le due curve in eccezione a 0.085 (B02600–B02650).
+* **Effetto sul dt.** Con tutte le coppie il dt ammesso dalla CFL è l'84% di quello che si avrebbe con il passo medio; senza le eccezioni sale al 91.5%. Il resto della distribuzione è molto compatto: togliendo altre 10 coppie si arriva a 0.036.
+* **Effetto delle curve.** Lungo la linea d'asse il passo è quasi costante (dx_dev_abs su dx_c tra 0.6% e 1% senza eccezioni). Il passo si accorcia davvero solo dove le sezioni si inclinano l'una rispetto all'altra, nelle curve. I casi peggiori dell'analisi 2 sono infatti anche ai primi posti dell'analisi 1, con angoli di 20–50°.
+* **Misura alternativa.** Se il passo fosse misurato con dx_min invece che con dx_avg, il caso peggiore sarebbe molto più severo: dx_dev_abs 0.36 con tutte le coppie e 0.20 senza eccezioni.
+* **Rami.** Il ramo V è il più regolare (0.020); nel ramo N il caso peggiore senza eccezioni è N02100–N02150 (0.052); nel ramo B è B02600–B02650 (0.084).
+
+### Questioni aperte
+
+* **Passi di 50.504–50.505 m** lungo la linea d'asse in N01950–N02000, B00150–B00200 e B00450–B00500: superano la tolleranza di 4–5 mm per effetto delle modifiche a mano.
+* **Mesh e modello.** La mesh va rigenerata dai file `_50m` e `STRINGDEF` va aggiornato. Va anche verificato come BASEmesh tratta la B00400 coincidente con `idrometro_Borgo` e le sezioni che terminano sulle nodestring degli edifici.
