@@ -583,3 +583,64 @@ Ho anche fatto una prova del grafo su una copia. Poi `write3.py` ha scritto le 5
 2. **`check_regions.py`:** 906 facce, nessuna striscia, nessuna faccia senza punto o con più punti. Il risultato è identico con le coordinate arrotondate a 1 mm e a 1 cm.
 3. **`verify3.py`:** 906 facce con un punto ciascuna. Per la regola dei 5 m restano solo le eccezioni note. Gli incroci delle sezioni e l'integrità dei GeoPackage sono invariati. L'unico controllo segnalato resta quello del passo, per le tre coppie a 50.504–50.505 m.
 4. **Originali:** le impronte SHA-256 sono invariate.
+
+## 19 novembre 2026, sera: allineamento dopo la mesh definitiva
+
+Per generare la mesh definitiva l'utente ha modificato a mano in QGIS 8 sezioni: V01050, V02950, B00000, B00250, B00450, B00950, B07700 e B12600. Ha anche modificato 30 breakline e la nodestring `P13_monte_idrometro_Ponte_Cervia`. Breakline, boundary e punti regione non sono stati toccati da me (impronte SHA-256 uguali prima e dopo).
+
+### Centerpoint, bankpoint e linee d'asse
+
+`sync_cp_bp.py` ha confrontato le sezioni con i layer salvati:
+
+* **bankpoint:** ne cambiano 8, uno per sezione modificata, tutti con `tipo` e `regola` `manuale`. Gli spostamenti vanno da 0.02 m (B00950 dx) a 5.58 m (B12600 sx);
+* **B00000:** si è spostata di 0.48 m verso monte lungo l'asta (s0_asta da 16 253.250 a 16 252.770 m). La linea d'asse B è stata ritagliata di nuovo, e `s_m` di tutte le sezioni B è aumentato di 0.48 m;
+* **centerpoint:** si spostano di qualche millimetro o centimetro quelli delle sezioni modificate (al massimo 3.9 cm, V02950; 0.48 m la B00000 lungo l'asta).
+
+`write3.py` ha scritto linee d'asse, centerpoint e bankpoint dopo il backup `*_backup_20261119c.gpkg` e ha letto dal DTM le 8 quote nuove. Rilanciato, `sync_cp_bp.py` dà zero cambiamenti. Ho anche rigenerato `docs/Brenta_sections_50m_mesh10.csv`.
+
+### Eccezioni
+
+Su indicazione dell'utente ho aggiunto alle eccezioni (in `verify3.py`, `dx_dev.py` e al §14 bis delle regole):
+
+* **regola dei 5 m:** N02150 (nodo delle breakline 210 e 1232 a 1.00 m dall'incrocio) e B12600 (estremi a 1.5 mm e 0.2 mm da un vertice delle breakline 1316 e 1317);
+* **passo:** V01050–V01100 (50.517 m), B00450–B00500 (50.502 m) e B00900–B00950 (50.509 m), dovute alle sezioni modificate.
+
+Le altre sezioni modificate non hanno bisogno di eccezioni: V02950, B07700 rispettano tutte le regole, mentre B00000, B00250 e B00450 lo erano già (per B00000 e B00450 sono cambiate le distanze dai vertici dei muri: 2.34 m e 1.26/2.89 m).
+
+### Verifiche (sui file riletti dal disco)
+
+1. **`verify3.py`:** conteggi, nomi, geometrie delle sezioni, linee d'asse, centerpoint e bankpoint corretti; 906 facce con un punto ciascuna; integrità dei sei GeoPackage a posto. Restano segnalati:
+   * il passo di N01950–N02000 (50.505 m) e B00150–B00200 (50.504 m), già noti;
+   * la regola dei 5 m alla N15150: il nodo comune alle breakline 866 e 1151, modificate dall'utente, sta a 3.86 m dall'incrocio. Non l'ho aggiunta alle eccezioni senza conferma.
+2. **`verify3_dtm.py`:** le 1470 quote dei bankpoint coincidono con il DTM.
+3. **Impronte SHA-256:** invariate per breaklines_50m, boundary_50m, regioni_ponti_50m e per gli originali.
+
+### Mesh definitiva: lati minuscoli alla B12600
+
+Agli estremi della B12600 la mesh (`10_quality-mesh.2dm` e `10_computational-mesh.2dm`, 519 726 nodi) ha nodi a 0.2 mm e circa 1.5 mm l'uno dall'altro: il lato più corto di tutta la mesh è 0.2 mm. Nascono perché gli estremi della sezione cadono vicinissimi, ma non sopra, a un vertice delle breakline 1316 e 1317. In BASEMENT un lato così corto può ridurre molto il passo temporale.
+
+### Analisi del passo
+
+Ho rilanciato `dx_dev.py` e `dx_dev_fig.py` e aggiornato [Brenta_analisi_passo_50m.md](Brenta_analisi_passo_50m.md). Le coppie escluse passano da 19 a 27. Con tutte le coppie i risultati quasi non cambiano (dx_dev_abs 0.1641). Senza eccezioni dx_dev_abs vale 0.0854, e nel ramo N il caso peggiore diventa N01550–N01600 (0.045), perché N02100–N02150 ora è esclusa.
+
+## 19 novembre 2026, sera: B12600 corretta ed eccezioni definitive
+
+L'utente ha corretto le breakline 1316 e 1317 alla B12600 e rigenerato la mesh. Ho controllato i layer:
+
+* le sezioni non sono cambiate: `sync_cp_bp.py` dà zero cambiamenti per centerpoint e bankpoint;
+* la B12600 non ha più vertici di breakline entro 5 m dagli incroci, quindi l'ho **tolta dalle eccezioni**;
+* `check_regions.py` dà 906 facce con un punto ciascuno, senza strisce, anche con le coordinate arrotondate a 1 mm e 1 cm.
+
+**Nota:** i file `mesh/10_quality-mesh.2dm` e `mesh/10_computational-mesh.2dm` presenti sul disco sono ancora quelli delle 16:28 e 16:32 e hanno ancora i lati di 0.2 mm alla B12600. La mesh rigenerata non è ancora stata salvata in quella cartella.
+
+Su indicazione dell'utente ho aggiunto alle eccezioni tutte le osservazioni ancora aperte:
+
+* **regola dei 5 m:** N15150 (3.86 m, breakline 866 e 1151);
+* **passo:** N01950–N02000 (50.505 m) e B00150–B00200 (50.504 m).
+
+### Verifiche (sui file riletti dal disco)
+
+1. **`verify3.py`:** tutti i controlli `OK`; le violazioni del passo e della regola dei 5 m sono esattamente le eccezioni.
+2. **`verify3_dtm.py`:** le 1470 quote dei bankpoint coincidono con il DTM.
+3. **Analisi del passo:** l'ho rilanciata con le eccezioni definitive. Le coppie escluse restano 27: entrano N15100–N15150 e N15150–N15200, ed escono B12550–B12600 e B12600–B12650. Senza eccezioni dx_dev_abs resta 0.0854.
+

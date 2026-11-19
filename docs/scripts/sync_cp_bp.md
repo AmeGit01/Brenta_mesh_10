@@ -51,3 +51,4 @@ Poi:
 * Ogni sezione deve incrociare la linea d'asse del suo ramo in un solo punto, altrimenti lo script si ferma con un errore.
 * Lanciato subito dopo una scrittura, deve dire "0" centerpoint e "0" bankpoint cambiati. È un buon controllo che i layer siano già allineati: il 18 novembre è stato rilanciato dopo `write3.py` e ha dato zero cambiamenti.
 * Il 18 novembre ha spostato di 2.5 cm il centerpoint di N00150 e di 5 mm quello di N01950. Sono le due sezioni modificate a mano prima del 17 novembre, che non passavano più esattamente per il loro vecchio centerpoint.
+* Il 19 novembre, dopo le modifiche a mano per la mesh definitiva (V01050, V02950, B00000, B00250, B00450, B00950, B07700, B12600), ha cambiato 8 bankpoint, uno per sezione, e spostato la B00000 di 0.48 m verso monte lungo l'asta: `s_m` di tutte le sezioni B è aumentato di 0.48 m (356 centerpoint con `s_m` cambiato). Rilanciato dopo la scrittura ha dato zero cambiamenti.

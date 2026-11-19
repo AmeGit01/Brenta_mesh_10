@@ -60,8 +60,10 @@ Solo stampa: una riga numerata per controllo, che termina con `OK` o `**CHECK**`
 
 Le eccezioni sono scritte nel codice, come deciso dall'utente il 18 novembre:
 
-* **regola dei 5 m:** N16000, più B00000, B00100, B00150, B00200, B00300, B00400, B00450 e B00500, il cui vertice vicino appartiene a una linea dei muri bloccata (`EXCW`);
-* **passo:** le coppie N01900–N01950, B11200–B11250, B00250–B00300 e B00300–B00350.
+* **regola dei 5 m:** N16000, più B00000, B00100, B00150, B00200, B00300, B00400, B00450 e B00500, il cui vertice vicino appartiene a una linea dei muri bloccata (`EXCW`); dal 19 novembre anche N02150 e N15150 (`EXC5`);
+* **passo:** le coppie N01900–N01950, B11200–B11250, B00250–B00300 e B00300–B00350; dal 19 novembre anche V01050–V01100, B00450–B00500, B00900–B00950, N01950–N02000 e B00150–B00200.
+
+Al 19 novembre, dopo la mesh definitiva, tutti i controlli danno `OK`.
 
 ## Uso
 

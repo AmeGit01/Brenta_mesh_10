@@ -14,7 +14,10 @@
 #     (dx_dev_abs_c, dx_dev_abs_min), together with the per-pair relative step e_i = (dx_avg_i - mean)/mean, the sensitivity to the k
 #     shortest pairs and the list of the shortest pairs.
 # Exceptions (user, 2026-11-18): N16000 and B00000, B00100, B00150, B00200, B00300, B00400, B00450, B00500 (5 m rule, the Borgo ones
-#          because of vertices of the locked wall lines); N01900-N01950, B11200-B11250, B00250-B00300-B00350 (spacing). A pair is excluded when
+#          because of vertices of the locked wall lines); N01900-N01950, B11200-B11250, B00250-B00300-B00350 (spacing).
+#          Added 2026-11-19 (final mesh): N02150, N15150 (5 m rule); V01050-V01100, B00450-B00500, B00900-B00950 (spacing; V01050, B00450
+#          and B00950 are the edited sections, enough to exclude the pair); N01950-N02000 and B00150-B00200 (spacing, a few mm; already
+#          excluded through N01950 and B00150). A pair is excluded when
 #          at least one of its two sections is an exception section. Every table is given with all pairs and without exceptions.
 # Inputs : argv[1] = layers folder (boundary_50m.gpkg, centerpoints_50m.gpkg); argv[2] = output CSV of the pairs (e.g. docs/Brenta_dx_dev_50m.csv).
 # Output : the CSV (one row per pair: sez_monte, sez_valle, ramo, dx_c, dx_avg, diff_avg_c, dx_min, dx_max, dx_dev, ang_gradi, larg_m, e_avg_ramo, eccezione)
@@ -24,7 +27,8 @@ import sys, csv, re, numpy as np, geopandas as gpd, shapely, warnings; warnings.
 from shapely.geometry import LineString
 L,OUT=sys.argv[1],sys.argv[2]; NS=201
 EXC={'N16000','N01900','N01950','B11200','B11250','B00250','B00300','B00350',
-     'B00000','B00100','B00150','B00200','B00400','B00450','B00500'}   # last line: 5 m rule, vertices of the locked wall lines (B00300 already above)
+     'B00000','B00100','B00150','B00200','B00400','B00450','B00500',   # 5 m rule, vertices of the locked wall lines (B00300 already above)
+     'N02150','N15150','V01050','B00950'}   # added 2026-11-19 after the final mesh: N02150, N15150 (5 m rule); V01050, B00950 (spacing)
 bd=gpd.read_file(f'{L}/boundary_50m.gpkg'); cp=gpd.read_file(f'{L}/centerpoints_50m.gpkg'); S=dict(zip(cp.nome,cp.s_m))
 sec=bd[bd.nome.str.match(r'^[NVB]\d{5}$')]; G={n:LineString(shapely.get_coordinates(g)[:,:2]) for n,g in zip(sec.nome,sec.geometry)}
 order=list(sec.nome); rows=[]

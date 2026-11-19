@@ -12,6 +12,9 @@
 # Exceptions (decided by the user, 2026-11-18): 5 m rule -> N16000, and (EXCW) the Borgo sections B00000, B00100, B00150, B00200, B00300,
 #          B00400, B00450, B00500 whose near vertex belongs to a locked wall line (mat_id 11); straight distance between consecutive sections out of 50+-0.5 m
 #          -> pairs N01900-N01950, B11200-B11250, B00250-B00300, B00300-B00350 (B00250, B00300, B00350 moved by hand).
+#          Added 2026-11-19 (final mesh, sections edited by the user): 5 m rule -> N02150, N15150; spacing -> V01050-V01100, B00450-B00500,
+#          B00900-B00950, and the millimetric N01950-N02000 (50.505 m), B00150-B00200 (50.504 m). B12600 was an exception for a few minutes
+#          and was removed after the user fixed breaklines 1316/1317.
 import sys, sqlite3, re, json, numpy as np, geopandas as gpd, shapely, warnings, collections; warnings.filterwarnings('ignore')
 from shapely.geometry import LineString, Point
 from shapely.ops import polygonize, unary_union
@@ -19,7 +22,7 @@ from scipy.spatial import cKDTree
 L='/home/amedeo/Documents/Brenta_mesh_10/layers'; rd=lambda n: gpd.read_file(f'{L}/{n}.gpkg',fid_as_index=True)
 bl,bd,rg,cp,bp,cl=rd('breaklines_50m'),rd('boundary_50m'),rd('regioni_ponti_50m'),rd('centerpoints_50m'),rd('bankpoints_50m'),rd('centerline_50m')
 rg0=rd('regioni_ponti'); ref=rd('centerline_50m_backup_20261117'); A=ref[ref.nome=='asta_principale'].geometry.iloc[0]
-EXC5={'N16000'}; EXCW={'B00000','B00100','B00150','B00200','B00300','B00400','B00450','B00500'}; LOCK=set(json.load(open(sys.argv[1]))); EXCD={('N01900','N01950'),('B11200','B11250'),('B00250','B00300'),('B00300','B00350')}
+EXC5={'N16000','N02150','N15150'}; EXCW={'B00000','B00100','B00150','B00200','B00300','B00400','B00450','B00500'}; LOCK=set(json.load(open(sys.argv[1]))); EXCD={('N01900','N01950'),('B11200','B11250'),('B00250','B00300'),('B00300','B00350'),('V01050','V01100'),('B00450','B00500'),('B00900','B00950'),('N01950','N02000'),('B00150','B00200')}
 co=lambda g: shapely.get_coordinates(g)
 k=0
 def out(msg,ok=None):

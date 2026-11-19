@@ -1,6 +1,6 @@
 # Analisi statistica del passo tra le sezioni (sezioni a 50 m)
 
-Analisi del 18 novembre 2026, sulle sezioni dopo le modifiche a mano di Borgo; tabelle e figure aggiornate il 19 novembre. Il contesto è nel [registro di lavoro](workflow.md), alla voce "18 novembre 2026, pomeriggio".
+Analisi del 18 novembre 2026, sulle sezioni dopo le modifiche a mano di Borgo; tabelle e figure aggiornate il 19 novembre e poi di nuovo, lo stesso giorno, dopo che l'utente ha modificato 8 sezioni per la mesh definitiva (V01050, V02950, B00000, B00250, B00450, B00950, B07700, B12600) e sono state aggiunte le nuove eccezioni (versione finale: tutte le osservazioni ancora aperte sono diventate eccezioni, mentre la B12600, corretta dall'utente, non lo è più). Il contesto è nel [registro di lavoro](workflow.md), alla voce "18 novembre 2026, pomeriggio".
 
 * **Script:** `scripts/dx_dev.py` per le tabelle ([scheda](scripts/dx_dev.md)) e `scripts/dx_dev_fig.py` per le figure ([scheda](scripts/dx_dev_fig.md)).
 * **Dati di ogni coppia:** [Brenta_dx_dev_50m.csv](Brenta_dx_dev_50m.csv).
@@ -16,10 +16,14 @@ L'analisi riguarda il passo dx tra sezioni consecutive dello stesso ramo, cioè 
 Le statistiche sono date due volte:
 
 * **tutte le coppie;**
-* **senza eccezioni:** si escludono le 19 coppie che contengono almeno una sezione in eccezione:
+* **senza eccezioni:** si escludono le 27 coppie che contengono almeno una sezione in eccezione (le eccezioni sono elencate in [Brenta_regole_e_metodo.md](Brenta_regole_e_metodo.md), §14 bis):
   * N01850–N01900, N01900–N01950, N01950–N02000;
+  * N02100–N02150, N02150–N02200;
+  * N15100–N15150, N15150–N15200;
   * N15950–N16000, N16000–N16050;
+  * V01000–V01050, V01050–V01100;
   * le undici coppie da B00000–B00050 a B00500–B00550;
+  * B00900–B00950, B00950–B01000;
   * B11150–B11200, B11200–B11250, B11250–B11300.
 
 Nelle figure le coppie in eccezione sono disegnate con un cerchio vuoto grigio.
@@ -67,9 +71,9 @@ La figura 2 mostra dx_avg di ogni coppia lungo i tre rami, la figura 3 la differ
 | Insieme | Coppie | Media | Media dei valori assoluti | Min | Max | \|dx_avg − dx_c\| < 0.1 m | \|dx_avg − dx_c\| < 0.5 m | < −1 m | > +1 m |
 |---|---|---|---|---|---|---|---|---|---|
 | N | 320 | −0.066 | 0.094 | −5.85 | +0.34 | 82.8% | 96.9% | 6 | 0 |
-| V | 59 | −0.064 | 0.147 | −0.93 | +1.73 | 67.8% | 91.5% | 0 | 1 |
-| B | 353 | −0.072 | 0.281 | −8.64 | +1.69 | 58.4% | 85.0% | 18 | 5 |
-| **Totale** | 732 | −0.069 | 0.189 | −8.64 | +1.73 | 69.8% | 90.7% | 24 | 6 |
+| V | 59 | −0.060 | 0.142 | −0.93 | +1.73 | 67.8% | 91.5% | 0 | 1 |
+| B | 353 | −0.071 | 0.281 | −8.64 | +1.69 | 58.4% | 85.0% | 18 | 5 |
+| **Totale** | 732 | −0.068 | 0.188 | −8.64 | +1.73 | 69.8% | 90.7% | 24 | 6 |
 
 **Come leggere il paragrafo 3**
 
@@ -89,13 +93,13 @@ Vale 0 per due sezioni parallele e cresce quando convergono da un lato (figura 1
 | Insieme | Coppie | Media | Mediana | Dev. std | 90° perc. | 95° perc. | 99° perc. | Max | > 0.01 | > 0.02 | > 0.05 | > 0.10 | Angolo medio (°) | Larghezza media (m) |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | N, tutte | 320 | 0.0070 | 0.0011 | 0.0160 | 0.0172 | 0.0327 | 0.0664 | 0.1617 | 60 | 25 | 11 | 2 | 2.39 | 20.9 |
-| V, tutte | 59 | 0.0120 | 0.0084 | 0.0123 | 0.0267 | 0.0342 | 0.0547 | 0.0580 | 24 | 10 | 2 | 0 | 3.77 | 19.7 |
-| B, tutte | 353 | 0.0333 | 0.0203 | 0.0363 | 0.0857 | 0.1026 | 0.1577 | 0.2482 | 245 | 177 | 81 | 19 | 5.00 | 48.0 |
-| **Totale, tutte** | 732 | 0.0201 | 0.0079 | 0.0304 | 0.0623 | 0.0868 | 0.1412 | 0.2482 | 329 | 212 | 94 | 21 | 3.76 | 33.9 |
-| N, senza eccezioni | 315 | 0.0065 | 0.0011 | 0.0135 | 0.0170 | 0.0323 | 0.0644 | 0.1095 | 56 | 24 | 10 | 1 | 2.24 | 20.9 |
-| V, senza eccezioni | 59 | 0.0120 | 0.0084 | 0.0123 | 0.0267 | 0.0342 | 0.0547 | 0.0580 | 24 | 10 | 2 | 0 | 3.77 | 19.7 |
-| B, senza eccezioni | 339 | 0.0333 | 0.0207 | 0.0349 | 0.0864 | 0.1012 | 0.1517 | 0.1804 | 235 | 173 | 79 | 18 | 4.79 | 49.2 |
-| **Totale, senza eccezioni** | 713 | 0.0197 | 0.0075 | 0.0290 | 0.0621 | 0.0849 | 0.1372 | 0.1804 | 315 | 207 | 91 | 19 | 3.58 | 34.2 |
+| V, tutte | 59 | 0.0121 | 0.0084 | 0.0126 | 0.0267 | 0.0347 | 0.0547 | 0.0580 | 24 | 10 | 3 | 0 | 3.77 | 19.8 |
+| B, tutte | 353 | 0.0333 | 0.0203 | 0.0364 | 0.0857 | 0.1026 | 0.1577 | 0.2482 | 245 | 177 | 81 | 19 | 4.99 | 48.0 |
+| **Totale, tutte** | 732 | 0.0201 | 0.0078 | 0.0304 | 0.0623 | 0.0868 | 0.1412 | 0.2482 | 329 | 212 | 95 | 21 | 3.76 | 33.9 |
+| N, senza eccezioni | 311 | 0.0063 | 0.0010 | 0.0132 | 0.0168 | 0.0310 | 0.0644 | 0.1095 | 54 | 23 | 9 | 1 | 2.11 | 20.9 |
+| V, senza eccezioni | 57 | 0.0115 | 0.0084 | 0.0116 | 0.0260 | 0.0296 | 0.0549 | 0.0580 | 23 | 9 | 2 | 0 | 3.62 | 19.6 |
+| B, senza eccezioni | 337 | 0.0335 | 0.0208 | 0.0349 | 0.0867 | 0.1017 | 0.1519 | 0.1804 | 235 | 173 | 79 | 18 | 4.82 | 49.4 |
+| **Totale, senza eccezioni** | 705 | 0.0197 | 0.0075 | 0.0291 | 0.0620 | 0.0857 | 0.1377 | 0.1804 | 312 | 205 | 90 | 19 | 3.53 | 34.4 |
 
 **Tabella 4.** Le 15 coppie con dx_dev più alto, su tutte le coppie. Le distanze sono in metri; dx_avg − dx_c è la differenza della tabella 2.
 
@@ -149,26 +153,26 @@ Partendo dalla serie dei dx_avg,i di un insieme di coppie (un ramo, o tutto il m
 | Insieme | Coppie | Media dx_avg (m) | Dev. std (m) | Min dx_avg (m) | Coppia del min | Max dx_avg (m) | dx_dev_abs | min/media | dx_dev_abs su dx_c | dx_dev_abs su dx_min |
 |---|---|---|---|---|---|---|---|---|---|---|
 | N, tutte | 320 | 50.18 | 0.48 | 44.65 | N01900–N01950 | 50.84 | 0.1103 | 0.890 | 0.0099 | 0.2490 |
-| V, tutte | 59 | 50.08 | 0.37 | 49.07 | V02800–V02850 | 51.73 | 0.0202 | 0.980 | 0.0078 | 0.0602 |
-| B, tutte | 353 | 49.99 | 0.79 | 41.86 | B11200–B11250 | 53.12 | 0.1625 | 0.838 | 0.0583 | 0.3488 |
-| **Totale, tutte** | 732 | 50.08 | 0.65 | 41.86 | B11200–B11250 | 53.12 | **0.1641** | 0.836 | 0.0600 | 0.3587 |
-| N, senza eccezioni | 315 | 50.20 | 0.37 | 47.58 | N02100–N02150 | 50.84 | 0.0522 | 0.948 | 0.0099 | 0.1065 |
-| V, senza eccezioni | 59 | 50.08 | 0.37 | 49.07 | V02800–V02850 | 51.73 | 0.0202 | 0.980 | 0.0078 | 0.0602 |
-| B, senza eccezioni | 339 | 50.01 | 0.63 | 45.82 | B02600–B02650 | 52.19 | 0.0837 | 0.916 | 0.0059 | 0.1839 |
-| **Totale, senza eccezioni** | 713 | 50.10 | 0.52 | 45.82 | B02600–B02650 | 52.19 | **0.0853** | 0.915 | 0.0078 | 0.1967 |
+| V, tutte | 59 | 50.08 | 0.37 | 49.07 | V02800–V02850 | 51.73 | 0.0203 | 0.980 | 0.0078 | 0.0602 |
+| B, tutte | 353 | 49.99 | 0.79 | 41.86 | B11200–B11250 | 53.12 | 0.1625 | 0.837 | 0.0582 | 0.3488 |
+| **Totale, tutte** | 732 | 50.08 | 0.65 | 41.86 | B11200–B11250 | 53.12 | **0.1641** | 0.836 | 0.0599 | 0.3587 |
+| N, senza eccezioni | 311 | 50.21 | 0.34 | 47.96 | N01550–N01600 | 50.84 | 0.0447 | 0.955 | 0.0098 | 0.0955 |
+| V, senza eccezioni | 57 | 50.08 | 0.37 | 49.07 | V02800–V02850 | 51.73 | 0.0202 | 0.980 | 0.0075 | 0.0607 |
+| B, senza eccezioni | 337 | 50.00 | 0.63 | 45.82 | B02600–B02650 | 52.19 | 0.0836 | 0.916 | 0.0062 | 0.1837 |
+| **Totale, senza eccezioni** | 705 | 50.10 | 0.51 | 45.82 | B02600–B02650 | 52.19 | **0.0854** | 0.915 | 0.0081 | 0.1967 |
 
 **Tabella 6.** Percentili dello scarto di ogni coppia dalla media del suo insieme, e_i = (dx_avg,i − media) / media, e numero di coppie sotto −2%, −5% e −10%. Lo scarto è con segno: negativo per le coppie più corte della media.
 
 | Insieme | 1° perc. | 5° perc. | 10° perc. | Mediana | 90° perc. | 95° perc. | 99° perc. | e < −0.02 | e < −0.05 | e < −0.10 |
 |---|---|---|---|---|---|---|---|---|---|---|
 | N, tutte | −0.0262 | −0.0106 | −0.0086 | 0.0014 | 0.0064 | 0.0068 | 0.0097 | 4 | 2 | 1 |
-| V, tutte | −0.0179 | −0.0094 | −0.0074 | −0.0007 | 0.0075 | 0.0085 | 0.0194 | 1 | 0 | 0 |
-| B, tutte | −0.0585 | −0.0206 | −0.0076 | 0.0005 | 0.0117 | 0.0171 | 0.0264 | 20 | 5 | 1 |
-| **Totale, tutte** | −0.0451 | −0.0141 | −0.0078 | 0.0023 | 0.0086 | 0.0106 | 0.0225 | 28 | 6 | 2 |
-| N, senza eccezioni | −0.0198 | −0.0105 | −0.0089 | 0.0011 | 0.0061 | 0.0065 | 0.0095 | 4 | 1 | 0 |
-| V, senza eccezioni | −0.0179 | −0.0094 | −0.0074 | −0.0007 | 0.0075 | 0.0085 | 0.0194 | 1 | 0 | 0 |
-| B, senza eccezioni | −0.0435 | −0.0204 | −0.0077 | 0.0001 | 0.0114 | 0.0167 | 0.0254 | 18 | 3 | 0 |
-| **Totale, senza eccezioni** | −0.0409 | −0.0130 | −0.0078 | 0.0020 | 0.0083 | 0.0102 | 0.0215 | 25 | 4 | 0 |
+| V, tutte | −0.0180 | −0.0082 | −0.0074 | −0.0008 | 0.0074 | 0.0084 | 0.0188 | 1 | 0 | 0 |
+| B, tutte | −0.0591 | −0.0206 | −0.0076 | 0.0005 | 0.0116 | 0.0171 | 0.0264 | 20 | 5 | 1 |
+| **Totale, tutte** | −0.0451 | −0.0141 | −0.0077 | 0.0023 | 0.0086 | 0.0106 | 0.0225 | 28 | 7 | 2 |
+| N, senza eccezioni | −0.0177 | −0.0105 | −0.0091 | 0.0010 | 0.0060 | 0.0063 | 0.0094 | 3 | 0 | 0 |
+| V, senza eccezioni | −0.0180 | −0.0085 | −0.0074 | −0.0007 | 0.0072 | 0.0084 | 0.0193 | 1 | 0 | 0 |
+| B, senza eccezioni | −0.0435 | −0.0204 | −0.0077 | 0.0001 | 0.0115 | 0.0167 | 0.0254 | 18 | 3 | 0 |
+| **Totale, senza eccezioni** | −0.0407 | −0.0128 | −0.0078 | 0.0018 | 0.0083 | 0.0103 | 0.0217 | 24 | 3 | 0 |
 
 ![dx_avg ordinati](figures/fig07_dx_avg_ordinati.png)
 
@@ -178,8 +182,8 @@ Partendo dalla serie dei dx_avg,i di un insieme di coppie (un ramo, o tutto il m
 
 | Insieme | k = 0 | k = 1 | k = 2 | k = 3 | k = 5 | k = 10 |
 |---|---|---|---|---|---|---|
-| Totale, tutte | 0.1641 | 0.1087 | 0.0854 | 0.0711 | 0.0594 | 0.0415 |
-| Totale, senza eccezioni | 0.0853 | 0.0710 | 0.0593 | 0.0506 | 0.0436 | 0.0355 |
+| Totale, tutte | 0.1641 | 0.1087 | 0.0854 | 0.0711 | 0.0594 | 0.0416 |
+| Totale, senza eccezioni | 0.0854 | 0.0711 | 0.0594 | 0.0468 | 0.0430 | 0.0328 |
 
 ![Sensibilità di dx_dev_abs](figures/fig08_sensibilita.png)
 
@@ -193,16 +197,16 @@ Partendo dalla serie dei dx_avg,i di un insieme di coppie (un ramo, o tutto il m
 | N01900–N01950 | 44.65 | −0.1085 | 50.49 | 37.43 | 0.1617 | 50.0 | sì |
 | B02600–B02650 | 45.82 | −0.0850 | 50.50 | 39.45 | 0.1390 | 35.4 | |
 | B01550–B01600 | 46.54 | −0.0706 | 50.25 | 41.16 | 0.1157 | 32.2 | |
-| B00250–B00300 | 46.98 | −0.0619 | 47.14 | 46.67 | 0.0066 | 3.2 | sì |
+| B00250–B00300 | 46.92 | −0.0632 | 47.14 | 46.56 | 0.0077 | 3.1 | sì |
 | B04950–B05000 | 47.14 | −0.0588 | 50.00 | 39.61 | 0.1596 | 26.1 | |
-| N02100–N02150 | 47.58 | −0.0500 | 50.50 | 44.57 | 0.0633 | 41.4 | |
+| N02100–N02150 | 47.58 | −0.0500 | 50.50 | 44.57 | 0.0633 | 41.4 | sì |
 | B02550–B02600 | 47.77 | −0.0461 | 50.00 | 43.36 | 0.0922 | 20.9 | |
-| B00700–B00750 | 47.93 | −0.0428 | 50.50 | 42.81 | 0.1069 | 24.5 | |
-| N01550–N01600 | 47.96 | −0.0422 | 50.50 | 46.08 | 0.0393 | 33.3 | |
+| B00700–B00750 | 47.93 | −0.0429 | 50.50 | 42.81 | 0.1069 | 24.5 | |
+| N01550–N01600 | 47.96 | −0.0423 | 50.50 | 46.08 | 0.0393 | 33.3 | |
 | B04900–B04950 | 48.05 | −0.0406 | 50.00 | 42.58 | 0.1138 | 19.3 | |
-| B13250–B13300 | 48.05 | −0.0405 | 50.00 | 44.41 | 0.0757 | 7.4 | |
-| B01400–B01450 | 48.31 | −0.0353 | 50.00 | 43.50 | 0.0996 | 22.2 | |
-| B01050–B01100 | 48.35 | −0.0344 | 49.75 | 44.46 | 0.0806 | 17.0 | |
+| B13250–B13300 | 48.05 | −0.0406 | 50.00 | 44.41 | 0.0757 | 7.4 | |
+| B01400–B01450 | 48.31 | −0.0354 | 50.00 | 43.50 | 0.0996 | 22.2 | |
+| B01050–B01100 | 48.35 | −0.0345 | 49.75 | 44.46 | 0.0806 | 17.0 | |
 | B13300–B13350 | 48.49 | −0.0318 | 50.00 | 45.22 | 0.0674 | 12.6 | |
 
 **Altri dati**
@@ -214,10 +218,10 @@ Partendo dalla serie dei dx_avg,i di un insieme di coppie (un ramo, o tutto il m
 
 * **Passo molto uniforme.** Il passo medio è 50.08 m con una deviazione standard di 0.65 m. L'80% delle coppie sta tra −0.8% e +0.9% dalla media (10° e 90° percentile, tabella 6), e la curva dei passi ordinati è quasi piatta (figura 7).
 * **Un solo caso fissa il dt.** dx_dev_abs sull'intero modello vale 0.164: il passo minimo, B11200–B11250, è il 16% più corto della media. Togliendo quella sola coppia scende a 0.109 (N01900–N01950), e togliendo le due curve in eccezione a 0.085 (B02600–B02650) (tabella 7, figura 8).
-* **Effetto sul dt.** Con tutte le coppie il dt ammesso dalla CFL è l'84% di quello che si avrebbe con il passo medio; senza le eccezioni sale al 91.5% (tabella 5). Il resto della distribuzione è molto compatto: senza eccezioni, togliendo altre 10 coppie si arriva a 0.036, e a k = 20 a 0.023.
+* **Effetto sul dt.** Con tutte le coppie il dt ammesso dalla CFL è l'84% di quello che si avrebbe con il passo medio; senza le eccezioni sale al 91.5% (tabella 5). Il resto della distribuzione è molto compatto: senza eccezioni, togliendo altre 10 coppie si arriva a 0.033, e a k = 20 a 0.023.
 * **Effetto delle curve.** Lungo la linea d'asse il passo è quasi costante (dx_dev_abs su dx_c tra 0.6% e 1% senza eccezioni). Il passo si accorcia davvero solo dove le sezioni si inclinano l'una rispetto all'altra, nelle curve (paragrafo 3). I casi peggiori dell'analisi 2 sono infatti anche ai primi posti dell'analisi 1, con angoli di 20–50° (tabella 8).
 * **Misura alternativa.** Se il passo fosse misurato con dx_min invece che con dx_avg, il caso peggiore sarebbe molto più severo: dx_dev_abs 0.36 con tutte le coppie e 0.20 senza eccezioni.
-* **Rami.** Il ramo V è il più regolare (0.020); nel ramo N il caso peggiore senza eccezioni è N02100–N02150 (0.052); nel ramo B è B02600–B02650 (0.084).
+* **Rami.** Il ramo V è il più regolare (0.020); nel ramo N il caso peggiore senza eccezioni è N01550–N01600 (0.045), da quando N02150 è un'eccezione; nel ramo B è B02600–B02650 (0.084).
 
 ## 6. Riproduzione
 

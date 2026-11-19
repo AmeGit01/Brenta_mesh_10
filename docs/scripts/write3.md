@@ -39,6 +39,11 @@ Il 18 novembre lo script è stato lanciato due volte:
 1. con `cl`/`cp`/`bp` da `sync_cp_bp.py`, etichetta `20261118b`. Ha creato i backup di centerline, centerpoints e bankpoints e letto 20 quote dal DTM. In quel momento lo script gestiva solo queste tre chiavi;
 2. con `bd`/`bl`/`reg_new` da `fix_manual.py`, etichetta `20261118c`. Ha creato i backup di breaklines, boundary e regioni_ponti, sostituito 2 breakline e 1 sezione e aggiunto 5 punti regione (fid 972–976).
 
+Il 19 novembre:
+
+3. con `bl` da `fix_bridges.py`, etichetta `20261119b`: 5 breakline dei ponti;
+4. con `cl`/`cp`/`bp` da `sync_cp_bp.py`, etichetta `20261119c`, dopo le modifiche a mano delle sezioni per la mesh definitiva. Ha letto 8 quote dal DTM.
+
 ## Verifiche e limiti
 
 * Non c'è un rollback automatico: in caso di errore si ripristina dai backup con l'etichetta usata.

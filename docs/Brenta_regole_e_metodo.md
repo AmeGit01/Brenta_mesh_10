@@ -234,11 +234,11 @@ Sono già presenti nei dati di partenza e si lasciano come sono:
 * in `breaklines.gpkg`, 14 righe hanno geometria vuota o nulla;
 * in `regioni_ponti.gpkg`, i fid 65 e 135 hanno geometria nulla, e i fid 57 e 58 cadono nella stessa faccia. In `regioni_ponti_50m` questi difetti non ci sono più: il 19 novembre sono stati eliminati i fid 65, 135 e 58.
 
-## 14. Cosa resta da fare (al 18 novembre 2026, pomeriggio)
+## 14. Cosa resta da fare (al 18 novembre 2026, pomeriggio; aggiornato il 19 novembre)
 
-1. **Passo lungo la linea d'asse oltre 50.5 m di pochi millimetri:** N01950–N02000 (50.505 m), B00150–B00200 (50.504 m) e B00450–B00500 (50.505 m). Dipendono dalle sezioni modificate a mano, il cui punto d'asse si è spostato di qualche millimetro.
-2. **Mesh e modello.** La mesh va rigenerata da `breaklines_50m`, `boundary_50m` e `regioni_ponti_50m`, e `STRINGDEF` va aggiornato con le 735 sezioni dai nuovi nomi. La B00400 e `idrometro_Borgo` sono coincidenti; va verificato come le trattano BASEmesh e BASEMENT.
-3. **Controllo della mesh.** Dopo la generazione va verificata la qualità degli elementi vicino ai bankpoint, alle violazioni dei 5 m, ai cigli allargati e alle strisce di muro, e che i materiali corrispondano alle regioni.
+1. **Violazioni del passo e della regola dei 5 m:** al 19 novembre tutte le violazioni rimaste sono eccezioni accettate dall'utente (§14 bis), comprese le coppie N01950–N02000 e B00150–B00200, oltre i 50.5 m di pochi millimetri.
+2. **Mesh e modello.** La mesh va rigenerata da `breaklines_50m`, `boundary_50m` e `regioni_ponti_50m`, e `STRINGDEF` va aggiornato con le 735 sezioni dai nuovi nomi. La B00400 e `idrometro_Borgo` sono coincidenti; va verificato come le trattano BASEmesh e BASEMENT. Il 19 novembre l'utente ha generato la mesh definitiva (`mesh/10_quality-mesh.2dm` e `mesh/10_computational-mesh.2dm`) dopo aver modificato a mano 8 sezioni; resta da aggiornare `STRINGDEF`.
+3. **Controllo della mesh.** Dopo la generazione va verificata la qualità degli elementi vicino ai bankpoint, alle violazioni dei 5 m, ai cigli allargati e alle strisce di muro, e che i materiali corrispondano alle regioni. Il 19 novembre si è visto che la B12600 incrociava le breakline 1316 e 1317 a 1.5 mm e 0.2 mm da un loro vertice, e che la mesh aveva lì lati di 0.2 mm. L'utente ha corretto le breakline: la B12600 non ha più violazioni, e la mesh va controllata di nuovo dopo la rigenerazione.
 
 Su indicazione dell'utente non si seguono più questi punti:
 * l'allargamento incompleto sul Brenta vecchio urbano;
@@ -253,7 +253,9 @@ Le eccezioni accettate dall'utente sono divise in due categorie. L'elenco compre
 | Sezioni | Motivo |
 |---|---|
 | N16000 | I suoi incroci con i piedi stanno a 3.13 e 3.06 m da quelli della nodestring `check_portata_Brenta_nuovo`, che non si sposta. |
-| B00000, B00100, B00150, B00200, B00300, B00400, B00450, B00500 | Zona dei muri di Borgo: il vertice entro 5 m appartiene a una linea dei muri (`mat_id` 11), che è bloccata. Le distanze sono 1.47; 2.34 e 1.05; 2.47; 2.18; 3.21, 0.87 e 0.87; 3.57; 2.89; 1.42 m (accettate il 18 novembre). |
+| B00000, B00100, B00150, B00200, B00300, B00400, B00450, B00500 | Zona dei muri di Borgo: il vertice entro 5 m appartiene a una linea dei muri (`mat_id` 11), che è bloccata. Le distanze sono 2.34; 2.34 e 1.05; 2.47; 2.18; 3.21, 0.87 e 0.87; 3.57; 1.26 e 2.89; 1.42 m (accettate il 18 novembre; B00000 e B00450 aggiornate il 19 novembre dopo la modifica a mano). |
+| N02150 | Il nodo comune alle breakline 210 e 1232 sta a 1.00 m dall'incrocio della sezione con la 1232 (accettata il 19 novembre, mesh definitiva). |
+| N15150 | Il nodo comune alle breakline 866 e 1151, modificate a mano dall'utente, sta a 3.86 m dall'incrocio della sezione (accettata il 19 novembre). |
 
 **Passo tra sezioni consecutive** (50 ± 0.5 m)
 
@@ -262,6 +264,11 @@ Le eccezioni accettate dall'utente sono divise in due categorie. L'elenco compre
 | N01900–N01950 | Curva stretta: 50.5 m lungo la linea d'asse, 46.68 m in linea retta. |
 | B11200–B11250 | Curva stretta attorno alla progressiva 27 470 m dell'asta: 50.5 m lungo la linea d'asse, 47.85 m in linea retta. |
 | B00250–B00300–B00350 | B00300 spostata a mano dall'utente nella zona dei muri di Borgo: 47.14 e 53.61 m lungo la linea d'asse, 47.03 e 53.16 m in linea retta. |
+| V01050–V01100 | V01050 modificata a mano per la mesh definitiva: 50.517 m lungo la linea d'asse (accettata il 19 novembre). |
+| B00450–B00500 | B00450 modificata a mano per la mesh definitiva: 50.502 m lungo la linea d'asse (accettata il 19 novembre). |
+| B00900–B00950 | B00950 modificata a mano per la mesh definitiva: 50.509 m lungo la linea d'asse e in linea retta (accettata il 19 novembre). |
+| N01950–N02000 | 50.505 m lungo la linea d'asse, pochi millimetri oltre il limite: N01950 è stata modificata a mano prima del 17 novembre (accettata il 19 novembre). |
+| B00150–B00200 | 50.504 m lungo la linea d'asse, pochi millimetri oltre il limite, per le sezioni sistemate a mano a Borgo (accettata il 19 novembre). |
 
 ## 15. Come si è arrivati a questo metodo
 

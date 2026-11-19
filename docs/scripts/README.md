@@ -148,3 +148,18 @@ Si lanciano dalla cartella del progetto.
 | 6 | `check_regions.py`, `verify3.py` | ripetuti | stampa | |
 
 Backup: `regioni_ponti_50m_backup_20261119.gpkg` (prima del passo 2) e `breaklines_50m_backup_20261119b.gpkg` (prima del passo 5).
+
+## Sesto passo (19 novembre 2026): allineamento dopo la mesh definitiva
+
+L'utente ha modificato a mano 8 sezioni (V01050, V02950, B00000, B00250, B00450, B00950, B07700, B12600). Si lanciano dalla cartella del progetto.
+
+| # | Script | Cosa fa | Produce | Scheda |
+|---|---|---|---|---|
+| 1 | `sync_cp_bp.py` | riallinea linee d'asse, centerpoint e bankpoint alle sezioni | `WD/write_sync1119.json` | [sync_cp_bp.md](sync_cp_bp.md) |
+| 2 | `write3.py` (sistema, OGR) | scrive il payload | `layers/centerline_50m.gpkg`, `centerpoints_50m.gpkg`, `bankpoints_50m.gpkg` | [write3.md](write3.md) |
+| 3 | `sync_cp_bp.py` | rilanciato come controllo: zero cambiamenti | | [sync_cp_bp.md](sync_cp_bp.md) |
+| 4 | `verify3.py`, `verify3_dtm.py` (sistema) | controllo completo, con le nuove eccezioni | stampa | [verify3.md](verify3.md), [verify3_dtm.md](verify3_dtm.md) |
+| 5 | `sections_csv.py` | tabella delle sezioni | `docs/Brenta_sections_50m_mesh10.csv` | [sections_csv.md](sections_csv.md) |
+| 6 | `dx_dev.py`, `dx_dev_fig.py` | analisi del passo e figure, con le nuove eccezioni | `docs/Brenta_dx_dev_50m.csv`, `docs/figures/fig0*.png` | [dx_dev.md](dx_dev.md), [dx_dev_fig.md](dx_dev_fig.md) |
+
+Backup: `*_backup_20261119c.gpkg` (centerline, centerpoints, bankpoints, prima del passo 2).

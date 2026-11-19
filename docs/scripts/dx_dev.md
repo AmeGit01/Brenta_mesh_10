@@ -50,12 +50,12 @@ In uno schema esplicito il passo temporale ammesso dalla condizione CFL è dt �
 
 ## Eccezioni
 
-Le eccezioni sono quelle decise dall'utente il 18 novembre:
+Le eccezioni sono quelle decise dall'utente il 18 novembre, più quelle aggiunte il 19 novembre dopo la mesh definitiva:
 
-* **regola dei 5 m:** N16000, B00000, B00100, B00150, B00200, B00300, B00400, B00450, B00500;
-* **passo:** N01900–N01950, B11200–B11250, B00250–B00300–B00350.
+* **regola dei 5 m:** N16000, B00000, B00100, B00150, B00200, B00300, B00400, B00450, B00500; dal 19 novembre anche N02150 e N15150;
+* **passo:** N01900–N01950, B11200–B11250, B00250–B00300–B00350; dal 19 novembre anche V01050, B00450 e B00950, le sezioni modificate a mano delle coppie V01050–V01100, B00450–B00500 e B00900–B00950. Le coppie N01950–N02000 e B00150–B00200, oltre i 50.5 m di pochi millimetri, sono escluse già attraverso N01950 e B00150.
 
-Una coppia è esclusa dalle statistiche "senza eccezioni" se almeno una delle due sezioni è un'eccezione. Le coppie escluse sono 19. Ogni tabella è data con tutte le coppie e senza eccezioni.
+Una coppia è esclusa dalle statistiche "senza eccezioni" se almeno una delle due sezioni è un'eccezione, quindi basta indicare la sezione modificata. Le coppie escluse sono 27 (erano 19 fino al 19 novembre). Ogni tabella è data con tutte le coppie e senza eccezioni.
 
 ## Output
 
