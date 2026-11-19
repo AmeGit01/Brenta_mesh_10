@@ -22,6 +22,7 @@ Per la coppia i, formata dalle sezioni k e k+1 dello stesso ramo:
 * **dx_min,i:** distanza minima tra i due segmenti.
 * **dx_max,i:** massimo delle distanze campionate.
 * **dx_c,i:** distanza lungo la linea d'asse, cioè la differenza di `s_m`.
+* **dx_avg,i − dx_c,i:** differenza tra le due misure del passo (colonna `diff_avg_c`).
 * **angolo** tra le due sezioni (gradi) e **larghezza** media (m).
 
 ## Analisi 1
@@ -32,7 +33,7 @@ Vale 0 per sezioni parallele. Lo script stampa:
 
 * le statistiche per ramo e in totale: media, mediana, deviazione standard, 90°, 95° e 99° percentile, massimo, coppie sopra 0.01, 0.02, 0.05 e 0.10, angolo e larghezza medi;
 * la correlazione di dx_dev con l'angolo, con la larghezza e con larghezza · tan(angolo) / dx_avg;
-* le 15 coppie con dx_dev più alto.
+* le 15 coppie con dx_dev più alto, con la colonna dx_avg − dx_c subito dopo dx_avg.
 
 ## Analisi 2
 
@@ -58,8 +59,8 @@ Una coppia è esclusa dalle statistiche "senza eccezioni" se almeno una delle du
 
 ## Output
 
-* Il CSV, con una riga per coppia e le colonne `sez_monte`, `sez_valle`, `ramo`, `dx_c`, `dx_avg`, `dx_min`, `dx_max`, `dx_dev`, `ang_gradi`, `larg_m`, `e_avg_ramo` (scarto dalla media del ramo, calcolata su tutte le coppie) ed `eccezione` (1 se esclusa).
-* Le tabelle Markdown delle due analisi, stampate a video.
+* Il CSV, con una riga per coppia e le colonne `sez_monte`, `sez_valle`, `ramo`, `dx_c`, `dx_avg`, `diff_avg_c` (dx_avg − dx_c), `dx_min`, `dx_max`, `dx_dev`, `ang_gradi`, `larg_m`, `e_avg_ramo` (scarto dalla media del ramo, calcolata su tutte le coppie) ed `eccezione` (1 se esclusa).
+* Le tabelle Markdown delle due analisi, stampate a video, più le statistiche di dx_avg − dx_c (media, minimo e massimo, con e senza eccezioni). Le tabelle sono riportate, numerate e commentate, in [Brenta_analisi_passo_50m.md](../Brenta_analisi_passo_50m.md); le figure si fanno con `dx_dev_fig.py` ([scheda](dx_dev_fig.md)).
 
 ## Uso
 

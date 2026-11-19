@@ -4,7 +4,7 @@
 #     dx_avg  = mean distance between the two sections: each section is sampled at NS equally spaced points, the distance of every point
 #               from the other section (segment) is taken, and dx_avg is the mean over the points of both sections (symmetric);
 #     dx_min  = minimum distance between the two segments; dx_max = maximum of the sampled distances;
-#     dx_c    = distance along the centre line (difference of s_m, i.e. dist_next);
+#     dx_c    = distance along the centre line (difference of s_m, i.e. dist_next); diff_avg_c = dx_avg - dx_c;
 #     ang     = angle between the two sections (degrees); larg = mean length of the two sections.
 #   ANALYSIS 1 (local, one value per pair): dx_dev = (dx_avg - dx_min) / dx_avg  -> 0 for parallel sections, grows when they converge.
 #   ANALYSIS 2 (global, one value per set of pairs: reach N, V, B and all together):
@@ -17,7 +17,7 @@
 #          because of vertices of the locked wall lines); N01900-N01950, B11200-B11250, B00250-B00300-B00350 (spacing). A pair is excluded when
 #          at least one of its two sections is an exception section. Every table is given with all pairs and without exceptions.
 # Inputs : argv[1] = layers folder (boundary_50m.gpkg, centerpoints_50m.gpkg); argv[2] = output CSV of the pairs (e.g. docs/Brenta_dx_dev_50m.csv).
-# Output : the CSV (one row per pair: sez_monte, sez_valle, ramo, dx_c, dx_avg, dx_min, dx_max, dx_dev, ang_gradi, larg_m, e_avg_ramo, eccezione)
+# Output : the CSV (one row per pair: sez_monte, sez_valle, ramo, dx_c, dx_avg, diff_avg_c, dx_min, dx_max, dx_dev, ang_gradi, larg_m, e_avg_ramo, eccezione)
 #          and Markdown tables printed to stdout (analysis 1, analysis 2, shortest pairs, sensitivity).
 # Run    : python3 scripts/dx_dev.py layers docs/Brenta_dx_dev_50m.csv      (Anaconda python3)
 import sys, csv, re, numpy as np, geopandas as gpd, shapely, warnings; warnings.filterwarnings('ignore')
@@ -36,13 +36,13 @@ for a,b in zip(order[:-1],order[1:]):
     avg=float(np.mean(d)); mn=float(la.distance(lb)); mx=float(np.max(d))
     u=np.diff(shapely.get_coordinates(la),axis=0)[0]; v=np.diff(shapely.get_coordinates(lb),axis=0)[0]
     ang=float(np.degrees(np.arccos(np.clip(np.dot(u,v)/np.linalg.norm(u)/np.linalg.norm(v),-1,1))))
-    rows.append(dict(sez_monte=a,sez_valle=b,ramo=a[0],dx_c=S[b]-S[a],dx_avg=avg,dx_min=mn,dx_max=mx,dx_dev=(avg-mn)/avg,
+    rows.append(dict(sez_monte=a,sez_valle=b,ramo=a[0],dx_c=S[b]-S[a],dx_avg=avg,diff_avg_c=avg-(S[b]-S[a]),dx_min=mn,dx_max=mx,dx_dev=(avg-mn)/avg,
                      ang_gradi=ang,larg_m=(la.length+lb.length)/2,eccezione=int(a in EXC or b in EXC)))
 for R in 'NVB':
     m=np.mean([r['dx_avg'] for r in rows if r['ramo']==R])
     for r in rows:
         if r['ramo']==R: r['e_avg_ramo']=(r['dx_avg']-m)/m
-cols=['sez_monte','sez_valle','ramo','dx_c','dx_avg','dx_min','dx_max','dx_dev','ang_gradi','larg_m','e_avg_ramo','eccezione']
+cols=['sez_monte','sez_valle','ramo','dx_c','dx_avg','diff_avg_c','dx_min','dx_max','dx_dev','ang_gradi','larg_m','e_avg_ramo','eccezione']
 with open(OUT,'w',newline='') as fh:
     w=csv.DictWriter(fh,fieldnames=cols); w.writeheader()
     for r in rows: w.writerow({k:(round(r[k],4) if isinstance(r[k],float) else r[k]) for k in cols})
@@ -59,9 +59,9 @@ for lab,rs in SETS:
     print(f"| {lab} | {len(v)} | {v.mean():.4f} | {np.median(v):.4f} | {v.std():.4f} | {q(90):.4f} | {q(95):.4f} | {q(99):.4f} | {v.max():.4f} | {(v>0.01).sum()} | {(v>0.02).sum()} | {(v>0.05).sum()} | {(v>0.10).sum()} | {np.mean([r['ang_gradi'] for r in rs]):.2f} | {np.mean([r['larg_m'] for r in rs]):.1f} |")
 A=np.array([r['dx_dev'] for r in rows]); W=np.array([r['larg_m'] for r in rows]); T=np.array([r['ang_gradi'] for r in rows]); X=np.array([r['dx_avg'] for r in rows])
 print(f"\ncorrelation of dx_dev with: angle {np.corrcoef(A,T)[0,1]:.2f}, width {np.corrcoef(A,W)[0,1]:.2f}, width*tan(angle)/dx_avg {np.corrcoef(A,W*np.tan(np.radians(T))/X)[0,1]:.2f}")
-print('\ntop 15 dx_dev:\n| coppia | dx_c | dx_avg | dx_min | dx_max | dx_dev | angolo (°) | larghezza (m) | eccezione |\n|---|---|---|---|---|---|---|---|---|')
+print('\ntop 15 dx_dev:\n| coppia | dx_c | dx_avg | dx_avg - dx_c | dx_min | dx_max | dx_dev | angolo (°) | larghezza (m) | eccezione |\n|---|---|---|---|---|---|---|---|---|---|')
 for r in sorted(rows,key=lambda r:-r['dx_dev'])[:15]:
-    print(f"| {pair(r)} | {r['dx_c']:.2f} | {r['dx_avg']:.2f} | {r['dx_min']:.2f} | {r['dx_max']:.2f} | {r['dx_dev']:.4f} | {r['ang_gradi']:.1f} | {r['larg_m']:.1f} | {'sì' if r['eccezione'] else ''} |")
+    print(f"| {pair(r)} | {r['dx_c']:.2f} | {r['dx_avg']:.2f} | {r['diff_avg_c']:+.2f} | {r['dx_min']:.2f} | {r['dx_max']:.2f} | {r['dx_dev']:.4f} | {r['ang_gradi']:.1f} | {r['larg_m']:.1f} | {'sì' if r['eccezione'] else ''} |")
 # ---- ANALYSIS 2: dx_dev_abs per set
 def dabs(v): v=np.array(v); return (v.mean()-v.min())/v.mean()
 print('\n## Analisi 2: dx_dev_abs = (media dx_avg - min dx_avg) / media dx_avg, per insieme\n')
@@ -88,5 +88,6 @@ for r in sorted(rows,key=lambda r:r['dx_avg'])[:15]:
 print('\n10 shortest pairs by dx_min (all): '+', '.join(f"{pair(r)} {r['dx_min']:.2f}" for r in sorted(rows,key=lambda r:r['dx_min'])[:10]))
 print('\n10 longest pairs by dx_avg (all): '+', '.join(f"{pair(r)} {r['dx_avg']:.2f}" for r in sorted(rows,key=lambda r:-r['dx_avg'])[:10]))
 print('\nexcluded pairs:',', '.join(pair(r) for r in rows if r['eccezione']))
+print('\ndx_avg - dx_c: mean',np.mean([r['diff_avg_c'] for r in rows]).round(3),'m, min',np.min([r['diff_avg_c'] for r in rows]).round(3),'m, max',np.max([r['diff_avg_c'] for r in rows]).round(3),'m; without exceptions min',np.min([r['diff_avg_c'] for r in rows if not r['eccezione']]).round(3),'max',np.max([r['diff_avg_c'] for r in rows if not r['eccezione']]).round(3))
 print('\nmean |dx_avg - dx_c|',np.mean([abs(r['dx_avg']-r['dx_c']) for r in rows]).round(3),'m, max',np.max([abs(r['dx_avg']-r['dx_c']) for r in rows]).round(3),'m')
 print('written',OUT,len(rows))

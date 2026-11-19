@@ -129,6 +129,7 @@ L'utente ha modificato a mano in QGIS 11 sezioni B (B00000–B00550, tranne B001
 | 5 | `sync_cp_bp.py` | rilanciato come controllo: zero cambiamenti | | [sync_cp_bp.md](sync_cp_bp.md) |
 | 6 | `verify3.py`, `verify3_dtm.py` (sistema) | controllo di tutti gli attributi, delle geometrie e delle regioni | stampa | [verify3.md](verify3.md), [verify3_dtm.md](verify3_dtm.md) |
 | 7 | `sections_csv.py` | tabella delle sezioni | `docs/Brenta_sections_50m_mesh10.csv` | [sections_csv.md](sections_csv.md) |
-| 8 | `dx_dev.py` | analisi di dx_dev tra sezioni consecutive | `docs/Brenta_dx_dev_50m.csv` | [dx_dev.md](dx_dev.md) |
+| 8 | `dx_dev.py` | analisi del passo tra sezioni consecutive (analisi 1 e 2) | `docs/Brenta_dx_dev_50m.csv` | [dx_dev.md](dx_dev.md) |
+| 9 | `dx_dev_fig.py` | figure dell'analisi del passo | `docs/figures/fig0*.png` | [dx_dev_fig.md](dx_dev_fig.md) |
 
 Backup: `*_backup_20261118b.gpkg` (centerline, centerpoints, bankpoints, prima del passo 2) e `*_backup_20261118c.gpkg` (breaklines, boundary, regioni_ponti, prima del passo 4).
