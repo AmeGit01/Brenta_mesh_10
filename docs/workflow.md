@@ -501,3 +501,85 @@ L'analisi del passo tra sezioni consecutive (analisi 1 su dx_dev, analisi 2 su d
 
 * **Passi di 50.504–50.505 m** lungo la linea d'asse in N01950–N02000, B00150–B00200 e B00450–B00500: superano la tolleranza di 4–5 mm per effetto delle modifiche a mano.
 * **Mesh e modello.** La mesh va rigenerata dai file `_50m` e `STRINGDEF` va aggiornato. Va anche verificato come BASEmesh tratta la B00400 coincidente con `idrometro_Borgo` e le sezioni che terminano sulle nodestring degli edifici.
+
+## 19 novembre 2026
+
+### Documentazione allineata
+
+In `Brenta_regole_e_metodo.md` due dati non erano aggiornati: le righe di `regioni_ponti_50m`, ferme a 905, e il numero di sezioni nel CSV, indicato come 737 invece di 735. Li ho corretti.
+
+### Punti regione: controllo e pulizia
+
+L'utente ha chiesto di tenere in `regioni_ponti_50m` solo i punti con geometria valida e di controllare che ci sia un solo punto per regione e che il layer si possa usare direttamente per la mesh.
+
+Per il controllo ho scritto `check_regions.py`, che costruisce il grafo planare in modo diverso da `verify3.py`:
+
+* noding con `shapely.node`;
+* eliminazione dei segmenti sovrapposti;
+* aggancio esplicito a 1 mm delle estremità che toccano il tratto interno di un'altra linea.
+
+Questi innesti a T sono 206. Le estremità distano dalla linea 10⁻¹¹–10⁻⁹ m e, se non si collegano, il grafo risulta aperto e diverse regioni si fondono. Una prima versione dello script, senza l'aggancio, dava infatti risultati sbagliati.
+
+Sul layer del 18 novembre l'esito è stato questo:
+
+* 909 righe: 907 punti e i due fid 65 e 135 senza geometria;
+* nessun punto con geometria non valida o con Z, e nessun attributo nullo;
+* una sola faccia con due punti, la 57/58 (`muro`, attributi identici);
+* i 20 punti con `buco` uguali agli originali.
+
+Decisione dell'utente: eliminare i fid 65, 135 e 58.
+
+Con il nuovo `drop_regions.py` ho fatto il backup `regioni_ponti_50m_backup_20261119.gpkg`, verificato identico al file di partenza, e ho eliminato le tre righe in un'unica transazione.
+
+### Verifiche (sul file riletto dal disco)
+
+1. **Conteggi e struttura:** 906 righe, tutte con geometria `Point`, EPSG:25832, campi invariati. `integrity_check` ok, indice R-tree e `gpkg_ogr_contents` a 906.
+2. **Righe rimaste:** identiche al backup per geometria e attributi. Mancano solo i fid 58, 65 e 135.
+3. **Grafo (`check_regions.py`):** 911 facce, di cui 906 con un punto ciascuna. Nessuna faccia ha più di un punto e nessun punto cade fuori dalle facce.
+4. **Facce senza punto:** sono 5 strisce larghe meno di un micrometro, non regioni vere (vedi più sotto).
+5. **Robustezza:** con le coordinate delle linee arrotondate a 1 mm e a 1 cm nessun punto cambia faccia.
+6. **Distanza dalle linee:** 26 punti stanno a meno di 1 m da una linea. Sono tutti originali, nelle strisce dei muri e del pilone; il minimo è 0.35 m.
+7. **Originali:** le impronte SHA-256 di `breaklines`, `boundary` e `regioni_ponti` sono invariate.
+
+In `verify3.py` ho aggiornato i valori attesi: nessuna faccia con più punti e nessuna riga senza geometria. Il file `mat11_lines.json` non c'era più, quindi ho ricostruito l'elenco delle 32 linee dei muri dai backup del 17 novembre, con la stessa logica di `prep_inputs_nvb.py`.
+
+Rilanciato, `verify3.py` dà 906 facce, ognuna con un punto. I punti regione, gli attributi e l'integrità dei sei GeoPackage sono a posto. L'unico controllo segnalato è quello del passo, per le tre coppie note a 50.504–50.505 m.
+
+### Strisce alle chiusure dei ponti
+
+Le 5 facce senza punto stanno dove le breakline di chiusura dei ponti, prolungate il 9 novembre fino ai nuovi cigli, corrono accanto alle nodestring dei ponti a circa 10⁻⁸ m di distanza:
+
+* 1113 lungo `P17_monte` (due strisce);
+* 1116 lungo `P20_valle`;
+* 1118/1124 lungo `P27_valle`;
+* 1421 lungo `P13_monte_idrometro_Ponte_Cervia`.
+
+Negli originali non ci sono. La mesh del 10 novembre (`mesh/10_quality-mesh.2dm`, 790 nodestring, quindi costruita sulla geometria del 9 novembre) le ha già incontrate: in quei punti non ha elementi anomali, con area minima da 1.6 a 2.4 m² e 0.10 m² a P13. Dalla stessa mesh si vede che i punti con `buco` sono trattati come buchi, perché il materiale 0 non compare.
+
+### Breakline dei ponti sovrapposte alle nodestring
+
+Su richiesta dell'utente ho eliminato le 5 strisce. In origine ogni breakline di chiusura era una copia esatta della nodestring del ponte, con gli stessi due vertici. Il 9 novembre è stata prolungata oltre i due estremi. In seguito il tratto in comune ha perso i vertici della nodestring e ha preso vertici intermedi a 10⁻¹¹–10⁻¹⁰ m da essa.
+
+Con il nuovo `fix_bridges.py`:
+
+* nel tratto in comune, le breakline 1113 (`P17_monte`), 1116 (`P20_valle`), 1118 (`P27_valle`) e 1421 (`P13_monte_idrometro_Ponte_Cervia`) hanno ora esattamente i due vertici della nodestring, senza vertici intermedi. I prolungamenti sono invariati;
+* la 1124, che tocca solo l'estremo di `P27_valle`, ha quel vertice portato esattamente sull'estremo;
+* le nodestring non sono state toccate.
+
+Il vertice tolto alla 1113 nel punto dove arrivano le breakline 567 e 1050 rende quelle due linee un innesto a T, a 5·10⁻¹¹ m dal tratto. È la stessa situazione dei dati originali.
+
+Prima di scrivere ho controllato che:
+
+* lo spostamento massimo fosse 3.5·10⁻¹⁰ m;
+* non nascessero nuovi incroci;
+* nessun punto regione si avvicinasse alle linee;
+* nessuna delle linee fosse fra quelle dei muri bloccate.
+
+Ho anche fatto una prova del grafo su una copia. Poi `write3.py` ha scritto le 5 geometrie dopo il backup `breaklines_50m_backup_20261119b.gpkg`.
+
+### Verifiche (sui file riletti dal disco)
+
+1. **Breakline:** cambiate solo le 5 indicate. Fid e attributi sono invariati, ognuna resta in una sola parte, e i vertici delle nodestring sono presenti esattamente.
+2. **`check_regions.py`:** 906 facce, nessuna striscia, nessuna faccia senza punto o con più punti. Il risultato è identico con le coordinate arrotondate a 1 mm e a 1 cm.
+3. **`verify3.py`:** 906 facce con un punto ciascuna. Per la regola dei 5 m restano solo le eccezioni note. Gli incroci delle sezioni e l'integrità dei GeoPackage sono invariati. L'unico controllo segnalato resta quello del passo, per le tre coppie a 50.504–50.505 m.
+4. **Originali:** le impronte SHA-256 sono invariate.

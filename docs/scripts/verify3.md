@@ -49,7 +49,7 @@ Solo stampa: una riga numerata per controllo, che termina con `OK` o `**CHECK**`
   * nessun incrocio tra sezioni;
   * i contatti con le nodestring sono di tre tipi: `equal` (B00400 = `idrometro_Borgo`), `section end on nodestring` (estremo appoggiato su un edificio) e `cross`, che non deve comparire.
 * **(G) Punti regione**
-  * un punto per faccia del grafo planare (breakline e tutto il boundary), con l'unica eccezione nota della coppia 57/58; nessun punto fuori dalle facce; righe con geometria nulla solo 65 e 135;
+  * un punto per faccia del grafo planare (breakline e tutto il boundary), senza eccezioni (il doppione 58 e le righe senza geometria 65 e 135 sono stati eliminati il 2026-11-19); nessun punto fuori dalle facce; nessuna riga con geometria nulla;
   * i punti originali con fid ≤ 176 presenti, non spostati e con gli stessi attributi, tranne il 41 sostituito il 9 novembre;
   * nessun attributo nullo e nessuna combinazione `nome`/`mat_id`/`max_area`/`buco` che non esista negli originali;
   * punti a meno di 1 m dalle linee: solo originali, nelle strisce strette dei muri;

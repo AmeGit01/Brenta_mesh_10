@@ -133,3 +133,18 @@ L'utente ha modificato a mano in QGIS 11 sezioni B (B00000–B00550, tranne B001
 | 9 | `dx_dev_fig.py` | figure dell'analisi del passo | `docs/figures/fig0*.png` | [dx_dev_fig.md](dx_dev_fig.md) |
 
 Backup: `*_backup_20261118b.gpkg` (centerline, centerpoints, bankpoints, prima del passo 2) e `*_backup_20261118c.gpkg` (breaklines, boundary, regioni_ponti, prima del passo 4).
+
+## Quinto passo (19 novembre 2026): punti regione pronti per la mesh
+
+Si lanciano dalla cartella del progetto.
+
+| # | Script | Cosa fa | Produce | Scheda |
+|---|---|---|---|---|
+| 1 | `check_regions.py` | controllo indipendente dei punti regione: un punto per faccia, attributi, robustezza all'arrotondamento a 1 mm e 1 cm | stampa | [check_regions.md](check_regions.md) |
+| 2 | `drop_regions.py` (sistema, OGR) | backup verificato ed eliminazione di feature per fid | `layers/regioni_ponti_50m.gpkg` | [drop_regions.md](drop_regions.md) |
+| 3 | `check_regions.py`, `verify3.py` | ripetuti sul file riscritto | stampa | |
+| 4 | `fix_bridges.py` | breakline di chiusura dei ponti sovrapposte esattamente alle nodestring | `WD/write_bridges.json` | [fix_bridges.md](fix_bridges.md) |
+| 5 | `write3.py` (sistema, OGR) | scrive il payload | `layers/breaklines_50m.gpkg` | [write3.md](write3.md) |
+| 6 | `check_regions.py`, `verify3.py` | ripetuti | stampa | |
+
+Backup: `regioni_ponti_50m_backup_20261119.gpkg` (prima del passo 2) e `breaklines_50m_backup_20261119b.gpkg` (prima del passo 5).

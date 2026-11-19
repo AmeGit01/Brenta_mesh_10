@@ -130,9 +130,9 @@ out(f'section-section crossings {x1}; section-nodestring contacts {sorted(x2,key
 U=unary_union(ln+NL+SL); fc=list(polygonize(U)); TF=shapely.STRtree(fc); g=rg[rg.geometry.notna()]; cnt=collections.Counter(); fof={}
 for p,f in zip(*TF.query(g.geometry.values,predicate='within')): cnt[int(f)]+=1; fof[g.index[p]]=int(f)
 multi=[sorted(i for i,f in fof.items() if f==j) for j,c in cnt.items() if c>1]; empty=[i for i in range(len(fc)) if cnt[i]==0]; outside=[i for i in g.index if i not in fof]
-out(f'planar graph: {len(fc)} faces; without point {len(empty)}; with >1 point {multi} (expected [[57, 58]]); points not inside a face {outside}; null-geometry rows {sorted(rg.index[rg.geometry.isna()])} (expected [65, 135])',
-    not empty and multi==[[57,58]] and not outside and sorted(rg.index[rg.geometry.isna()])==[65,135])
-orig=rg0.loc[[i for i in rg0.index if i<=176]]
+out(f'planar graph: {len(fc)} faces; without point {len(empty)}; with >1 point {multi} (expected []: fid 58 deleted on 19 Nov); points not inside a face {outside}; null-geometry rows {sorted(rg.index[rg.geometry.isna()])} (expected []: fid 65, 135 deleted on 19 Nov)',
+    not empty and not multi and not outside and rg.geometry.notna().all())
+orig=rg0.loc[[i for i in rg0.index if i<=176 and i not in (58,65,135)]]  # 58, 65, 135 deleted on 2026-11-19 (drop_regions.py)
 moved=[i for i in orig.index if not (i in rg.index and ((rg.geometry[i] is None and orig.geometry[i] is None) or (rg.geometry[i] is not None and orig.geometry[i] is not None and rg.geometry[i].equals(orig.geometry[i]))))]
 attr=[i for i in orig.index if i in rg.index and any(not (rg.loc[i,c]==orig.loc[i,c] or (rg.loc[i,c]!=rg.loc[i,c] and orig.loc[i,c]!=orig.loc[i,c])) for c in ('nome','mat_id','max_area','buco'))]
 out(f'original region points (fid<=176, from regioni_ponti.gpkg): missing or moved {moved} (expected [41], replaced on 9 Nov), attributes changed {attr}',moved==[41] and not attr)

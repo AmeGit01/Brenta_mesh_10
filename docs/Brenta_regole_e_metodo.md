@@ -51,13 +51,13 @@ I campi dei layer hanno nomi italiani. `sx` e `dx` indicano la sinistra e la des
 | `bankpoints_50m.gpkg` | nuovo | 1470 punti di sponda, due per sezione. |
 | `breaklines_50m.gpkg` | nuovo | Breakline con i cigli allargati e corrette per la regola dei 5 m. |
 | `boundary_50m.gpkg` | nuovo | Le 53 nodestring più le 735 sezioni dei tre rami. |
-| `regioni_ponti_50m.gpkg` | nuovo | 905 righe, di cui 903 con geometria. |
+| `regioni_ponti_50m.gpkg` | nuovo | 906 punti, tutti con geometria, uno per ogni faccia del grafo. Le righe senza geometria (fid 65 e 135) e il doppione 58 sono stati eliminati il 19 novembre. |
 
 Prima di riscrivere un file `_50m` se ne fa una copia datata (`_backup_AAAAMMGG`).
 
 I punti regione portano, oltre al nome, il materiale (`mat_id`) e l'area massima degli elementi (`max_area`). Nei dati originali ci sono 29 combinazioni di questi tre valori, e sono queste a definire i materiali del modello.
 
-La tabella completa delle 737 sezioni è in `docs/Brenta_sections_50m_mesh10.csv`.
+La tabella completa delle 735 sezioni è in `docs/Brenta_sections_50m_mesh10.csv`.
 
 ## 4. Come ragiona BASEmesh
 
@@ -69,7 +69,7 @@ Alcune caratteristiche di BASEmesh condizionano tutto il resto, e conviene averl
 
 **Le sezioni si disegnano da sinistra a destra orografica.** In BASEMENT questo corrisponde a `upstream_direction: "right"`.
 
-**Ogni regione chiusa deve contenere esattamente un punto regione.** Le breakline e le nodestring insieme dividono il piano in facce, il cosiddetto grafo planare. BASEmesh assegna a ogni faccia gli attributi del punto che vi cade dentro. Una faccia senza punto resta senza materiale; una con due punti ha attributi ambigui. Ogni volta che si aggiunge o si sposta una linea, quindi, va ricontato il grafo. Lo si ricostruisce con codice proprio prima di scrivere, collegando le estremità che toccano un'altra linea entro 1 mm. Sui layer originali il grafo ha 173 facce.
+**Ogni regione chiusa deve contenere esattamente un punto regione.** Le breakline e le nodestring insieme dividono il piano in facce, il cosiddetto grafo planare. BASEmesh assegna a ogni faccia gli attributi del punto che vi cade dentro. Una faccia senza punto resta senza materiale; una con due punti ha attributi ambigui. Ogni volta che si aggiunge o si sposta una linea, quindi, va ricontato il grafo. Lo si ricostruisce con codice proprio prima di scrivere, collegando le estremità che toccano un'altra linea entro 1 mm. Sui layer originali il grafo ha 173 facce. Molte estremità sono agganciate al tratto interno di un'altra linea e, per l'aritmetica in virgola mobile, ne distano 10⁻¹¹–10⁻⁹ m: vanno collegate (tolleranza 1 mm), altrimenti il grafo risulta aperto.
 
 Dopo ogni modifica alla geometria la mesh va rigenerata in QGIS. Il blocco `STRINGDEF` dei file di modello deve elencare tutte le nodestring, comprese le nuove sezioni.
 
@@ -104,7 +104,7 @@ Spostare un ciglio non deve rompere le regioni. Per questo:
 
 * ogni tratto di ciglio conserva il proprio fid e resta collegato ai tratti vicini;
 * dove il ciglio finisce sul contorno del dominio o su una linea che non si sposta, la sua estremità scorre lungo quella linea;
-* le linee trasversali che terminavano sul ciglio, come le chiusure dei ponti, si prolungano in linea retta fino al nuovo ciglio;
+* le linee trasversali che terminavano sul ciglio, come le chiusure dei ponti, si prolungano in linea retta fino al nuovo ciglio. Una chiusura che coincide con la nodestring del ponte deve contenerne esattamente i vertici, senza altri vertici nel tratto comune: un vertice anche a 10⁻¹⁰ m dalla nodestring crea una striscia sottilissima tra le due linee (corretto il 19 novembre con `fix_bridges.py`);
 * una nodestring che chiudeva una regione senza una breakline sotto, come `idrometro_Ponte_Zaccon`, si prolunga nella sua stessa direzione (in quel caso di 0.86 e 0.80 m);
 * nei punti in cui una linea si innesta su un'altra a T si inserisce un vertice comune, così non nascono facce minuscole.
 
@@ -193,7 +193,7 @@ Le nuove sezioni dividono il letto in nuove facce, e ognuna deve ricevere il suo
 * i punti esistenti che si tengono non si spostano e non cambiano attributi;
 * una faccia nuova riceve un punto nel luogo più lontano dai suoi bordi, con gli attributi della regione d'alveo da cui deriva;
 * un punto esistente che finisce a meno di 1 m da una nuova sezione viene sostituito da un punto nuovo nella stessa regione (è successo al fid 41);
-* i difetti già presenti nei dati originali, cioè i punti con geometria nulla e la faccia con due punti, restano come sono.
+* i difetti già presenti nei dati originali, cioè i punti con geometria nulla e la faccia con due punti, restano negli originali; in `regioni_ponti_50m` sono stati eliminati il 19 novembre (fid 65, 135 e 58).
 
 ## 11. Scrittura dei file e ambiente
 
@@ -219,7 +219,7 @@ Dopo ogni modifica, sui file riletti dal disco, si controlla che:
 7. le sezioni siano perpendicolari, a due vertici, con il primo a sinistra e coincidenti con i bankpoint;
 8. nessuna sezione ne incroci un'altra o una nodestring, tranne la B00400, che coincide con `idrometro_Borgo`;
 9. ogni sezione attraversi le linee previste;
-10. ogni faccia abbia un solo punto, senza conflitti di attributi;
+10. ogni faccia abbia un solo punto, senza conflitti di attributi, anche dopo aver arrotondato le coordinate delle linee a 1 mm e a 1 cm (`check_regions.py`);
 11. `z_dtm` sia uguale al valore della cella, e ogni bankpoint stia ad almeno 5 m dal ciglio;
 12. i bankpoint, ricalcolati con codice indipendente, coincidano;
 13. dopo l'allargamento la larghezza, campionata ogni 0.5 m, rispetti il criterio;
@@ -232,7 +232,7 @@ Dopo ogni modifica, sui file riletti dal disco, si controlla che:
 Sono già presenti nei dati di partenza e si lasciano come sono:
 
 * in `breaklines.gpkg`, 14 righe hanno geometria vuota o nulla;
-* in `regioni_ponti.gpkg`, i fid 65 e 135 hanno geometria nulla, e i fid 57 e 58 cadono nella stessa faccia.
+* in `regioni_ponti.gpkg`, i fid 65 e 135 hanno geometria nulla, e i fid 57 e 58 cadono nella stessa faccia. In `regioni_ponti_50m` questi difetti non ci sono più: il 19 novembre sono stati eliminati i fid 65, 135 e 58.
 
 ## 14. Cosa resta da fare (al 18 novembre 2026, pomeriggio)
 
