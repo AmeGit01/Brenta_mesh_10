@@ -1,0 +1,451 @@
+{
+  "_comment": "Case configuration template of the river-cross-sections skill. Values '<ASK>' or '<FIND>' must be filled before the scripts that read them are run: '<FIND>' = look for it in the case material (layers, docs, model files), '<ASK>' = ask the user (see references/kickoff.md). All paths are relative to the folder of this file (the working folder). Numeric defaults are the values used on the Brenta; keep or change them with the user. Every key is described in references/config.md.",
+  "project": {
+    "name": "<ASK>",
+    "crs": "<FIND>"
+  },
+  "python": {
+    "geo": "<FIND>",
+    "ogr": "<FIND>"
+  },
+  "paths": {
+    "layers": "layers",
+    "work": "work",
+    "docs": "docs",
+    "mesh": "mesh"
+  },
+  "inputs": {
+    "breaklines": "<FIND>",
+    "boundary": "<FIND>",
+    "regions": "<FIND>",
+    "dtm": "<FIND>"
+  },
+  "outputs": {
+    "breaklines": "<FIND>_<SUFFIX>",
+    "boundary": "<FIND>_<SUFFIX>",
+    "regions": "<FIND>_<SUFFIX>",
+    "centerline": "centerline_<SUFFIX>",
+    "centerpoints": "centerpoints_<SUFFIX>",
+    "bankpoints": "bankpoints_<SUFFIX>",
+    "sections_csv": "docs/sections_<SUFFIX>.csv"
+  },
+  "fields": {
+    "boundary": {
+      "id": "id",
+      "name": "nome"
+    },
+    "breaklines": {
+      "id": "id"
+    },
+    "regions": {
+      "name": "nome",
+      "mat_id": "mat_id",
+      "max_area": "max_area",
+      "hole": "buco"
+    },
+    "centerline": {
+      "name": "nome",
+      "reach": "ramo",
+      "length": "lung_m",
+      "s0": "s0_asta"
+    },
+    "centerpoints": {
+      "name": "nome",
+      "reach": "stream",
+      "s": "s_m",
+      "dist_next": "dist_next"
+    },
+    "bankpoints": {
+      "name": "nome",
+      "section": "sezione",
+      "s": "s_m",
+      "z": "z_dtm",
+      "dist_cp": "dist_cp",
+      "kind": "tipo",
+      "rule": "regola",
+      "prom": "prom"
+    },
+    "_comment": "logical name -> field name. Input layers: <FIND> from the layers. Derived layers: keep these defaults (Brenta names) or ask the user for a naming convention."
+  },
+  "bankpoint_values": {
+    "left": "sx",
+    "right": "dx",
+    "manual": "manual",
+    "nodestring": "nodestring",
+    "wall": "wall"
+  },
+  "dtm": {
+    "nodata": "<FIND>"
+  },
+  "face_classes": {
+    "_comment": "class of a planar-graph face from the name of its region point; first matching class in 'order' wins.",
+    "order": [
+      "bed",
+      "bank",
+      "wall",
+      "inter"
+    ],
+    "default": "flood",
+    "classes": {
+      "bed": {
+        "names": [],
+        "prefix": [],
+        "suffix": []
+      },
+      "bank": {
+        "names": [],
+        "prefix": [],
+        "suffix": []
+      },
+      "wall": {
+        "names": [],
+        "prefix": [],
+        "suffix": []
+      },
+      "inter": {
+        "names": [],
+        "prefix": [],
+        "suffix": []
+      }
+    },
+    "fixed": [
+      "bed"
+    ],
+    "editable": [
+      "bank",
+      "inter"
+    ],
+    "fixed_bank_names": [],
+    "_todo": "fill names/prefix/suffix from the region-point names of the case (<FIND>, then confirm with the user); fixed / editable / fixed_bank_names <ASK>"
+  },
+  "locked": {
+    "_comment": "breaklines bounding regions with these mat_id (walls) are never modified; locked_lines.py writes their fids.",
+    "mat_ids": [],
+    "lines_file": "locked_lines.json",
+    "_todo": "<ASK> mat_id of regions whose lines are never touched (e.g. walls); [] if none"
+  },
+  "originals": {
+    "_comment": "region points of the original layer (fid <= region_fid_max) are never moved; fids expected to be missing in the derived layer (replaced or deleted with the user's consent).",
+    "region_fid_max": "<FIND> (largest fid of the original region-point layer)",
+    "region_fids_replaced": [],
+    "region_fids_deleted": []
+  },
+  "nodestrings": {
+    "_comment": "boundary-condition lines and other non-section nodestrings",
+    "bc_upstream": "<FIND>",
+    "bc_downstream": "<FIND>",
+    "count": "<FIND> (non-section nodestrings in the original layer)"
+  },
+  "sections": {
+    "spacing": "<ASK>",
+    "tol": "<ASK>",
+    "digits": 5,
+    "name_pattern": "<from the reach codes, e.g. ^[NVB]\\d{5}$>",
+    "first_fid": "<FIND> (max fid of the nodestring layer + 1)",
+    "first_id": "<FIND> (max id + 1)",
+    "orientation": "left_to_right"
+  },
+  "reaches": [
+    {
+      "code": "<letter>",
+      "centerline": "<name of the output centerline feature>",
+      "source": "<name in centerlines>",
+      "first_number": 50,
+      "chainage": {
+        "mode": "own"
+      },
+      "start": {
+        "s": 0.0
+      },
+      "end": {
+        "line_end": true,
+        "gap": 0.0
+      }
+    }
+  ],
+  "anchors": [],
+  "rules": {
+    "min_angle_deg": 30,
+    "near_node": {
+      "radius": "<ASK>",
+      "slide_margin": 0.05,
+      "max_displacement": 2.0,
+      "ignore_below": 0.001
+    },
+    "regions": {
+      "clearance": 1.0,
+      "snap": 0.001,
+      "sliver_width": 0.001,
+      "robust_rounding": [
+        0.001,
+        0.01
+      ]
+    },
+    "noise": 1e-06
+  },
+  "exceptions": {
+    "_comment": "accepted by the user; every entry needs a reason and a date. A pair is excluded if either section is listed.",
+    "near_node": [],
+    "locked_line": [],
+    "spacing": [],
+    "angle": []
+  },
+  "params": {
+    "bank": {
+      "_comment": "bankpoint search rule; distances in metres, heights in metres (DTM units)",
+      "min_prominence": 0.05,
+      "lower_fraction": 0.5,
+      "top_buffer": 5.0,
+      "mid_halfwidth": 15.0,
+      "wide_bed": 30.0,
+      "min_window": 2.0,
+      "toe_window": 15.0,
+      "profile_extension": 60.0,
+      "max_distance": 1500.0
+    },
+    "check_bp": {
+      "_comment": "sec_in = bankpoint-computation input in the work folder; stream_prefix maps the tag (or stream) of a sec_in record to the section-name prefix; kind_* = bankpoint kind values; the numbers repeat the limit rule of the bankpoint computation (bank.py): window = min(cap, mid-width+mid_window), or toe+toe_window if the bed is wider than wide_bed or the window is shorter than min_window beyond the toe.",
+      "sec_in": "sec_in.json",
+      "stream_prefix": {},
+      "kind_wall": "wall",
+      "kind_max": "max",
+      "kind_fallback": "fallback",
+      "step": 0.01,
+      "mid_window": 15.0,
+      "toe_window": 15.0,
+      "wide_bed": 30.0,
+      "min_window": 2.0,
+      "prom_min": 0.05,
+      "extra_search": 60.0,
+      "max_search": 1500.0,
+      "tol_z": 1e-06,
+      "tol_kind_z": 0.001,
+      "residual_len": 0.0105
+    },
+    "check_geom": {
+      "_comment": "fids of the derived breaklines excluded from the crossing comparison (those handled by the fix_near_nodes special cases)",
+      "special_breaklines": []
+    },
+    "fix_near_nodes": {
+      "_comment": "special cases are Brenta-specific breaklines (fids of the derived breakline layer). laid_on_section: a breakline lying exactly on the section (its ends slide to the crossings of the section with their host toe lines). source_strip: upstream breakline laid on the section, downstream one slid to rules.near_node (radius + slide_margin) from the crossings.",
+      "laid_on_section": [],
+      "source_strip": [],
+      "slide_step": 0.01,
+      "max_slide": 6.0,
+      "max_iterations": 40,
+      "check_spacing": 0.25
+    },
+    "fix_bridges": {
+      "_comment": "tol: a breakline vertex closer than this (m) to the nodestring is 'on' it; min_overlap: length (m) of a breakline along a nodestring that makes a pair; max_shift: acceptance limit on the displacement (m); nodestring_regex: only nodestrings with a matching name are examined (null = all); exclude: pairs [breakline fid, nodestring] found by the detection but deliberately not fixed.",
+      "tol": 1e-06,
+      "min_overlap": 0.01,
+      "max_shift": 1e-06,
+      "nodestring_regex": null,
+      "exclude": [],
+      "exclude_reason": ""
+    },
+    "fix_manual": {
+      "near": 0.05,
+      "polylabel_tol": 0.01,
+      "end_gap_report": 0.01
+    },
+    "locked_lines": {
+      "buffer": 1e-06,
+      "min_shared": 0.01
+    },
+    "next_bed": {
+      "_comment": "distances in metres along the section normal",
+      "ray_range": 1500,
+      "margin_before_edge": 0.5,
+      "own_toe_skip": 0.05,
+      "search_past_toe": 15,
+      "window_margin": 2
+    },
+    "obst": {
+      "_comment": "distances in metres along the section normal",
+      "ray_range": 1500,
+      "margin_before_edge": 0.5,
+      "own_toe_skip": 0.05,
+      "top_tolerance": 1e-06
+    },
+    "prep_write": {
+      "_comment": "centerline_sources: per reach code, the source line the centerline is cut from. file = GeoPackage relative to the working folder; line = name in the centerline name field; start = 'zero' or 'first_section_s_asta' (chainage of the first section of the reach on the source line); end = 'last_section_s' (chainage of the last section) or 'line_end'; s0_from_start = write the start chainage as s0 (else null).",
+      "centerline_sources": {
+        "<reach code>": {
+          "file": "<layer with the source centerline, relative to the working folder>",
+          "line": "<name in centerlines>",
+          "start": "zero",
+          "end": "last_section_s",
+          "s0_from_start": true
+        }
+      },
+      "manual_threshold": 1e-06,
+      "changed_threshold": 1e-12
+    },
+    "regions2": {
+      "_comment": "preserved_pairs: faces that already hold exactly these region point fids (pre-existing pair in the original data) are left as they are; report_points: fids whose status is printed",
+      "preserved_pairs": [],
+      "report_points": [],
+      "polylabel_tolerance": 0.02
+    },
+    "sections_csv": {
+      "_comment": "titles of the 14 CSV columns, in order: section, reach, chainage, then left z/dist_cp/kind/rule/prom, right z/dist_cp/kind/rule/prom, section length",
+      "header": [
+        "section",
+        "reach",
+        "s_m",
+        "z_sx",
+        "dist_cp_sx",
+        "kind_sx",
+        "rule_sx",
+        "prom_sx",
+        "z_dx",
+        "dist_cp_dx",
+        "kind_dx",
+        "rule_dx",
+        "prom_dx",
+        "length_m"
+      ]
+    },
+    "verify3": {
+      "_comment": "kinds = allowed bankpoint kind values; kind_max/kind_wall = kind names of the DTM-maximum and wall bankpoints (kind_wall is also its rule value); prom_min = minimum prominence (m) of a kind_max bankpoint; notes = optional text appended to three check lines (history of the accepted differences in this case).",
+      "kinds": [
+        "max",
+        "fallback",
+        "wall",
+        "manual",
+        "nodestring",
+        "nobank",
+        "nodata"
+      ],
+      "kind_max": "max",
+      "kind_wall": "wall",
+      "prom_min": 0.05,
+      "notes": {}
+    },
+    "skel": {
+      "bed_classes": [
+        "bed"
+      ],
+      "corridor_classes": [
+        "bed",
+        "bank",
+        "wall"
+      ],
+      "buffer": 0.02,
+      "seed_spacing": 1.5,
+      "max_edge": 30
+    },
+    "cl": {
+      "bed_classes": [
+        "bed"
+      ],
+      "buffer": 0.02,
+      "min_island_area": 1000,
+      "seed_spacing": 0.6,
+      "max_edge": 40,
+      "min_boundary_dist": 0.15,
+      "bridge_min_nodes": 80,
+      "bridge_max_gap": 25,
+      "bridge_min_sep": 50,
+      "bridge_cost_factor": 2
+    },
+    "cl2": {
+      "toe_classes": [
+        "bed"
+      ],
+      "top_classes": [
+        "bed",
+        "bank",
+        "wall"
+      ],
+      "resample_step": 1.0,
+      "sigma_narrow": 6,
+      "sigma_wide": 60,
+      "sigma_width": 50,
+      "width_narrow": 15,
+      "width_wide": 50,
+      "width_default": 10.0,
+      "normal_step": 10,
+      "ray_range": 1500,
+      "report_lines": [],
+      "report_block": 3000,
+      "report_thresholds": [
+        10,
+        20
+      ],
+      "plot_line": "asta_principale"
+    },
+    "widen": {
+      "_comment": "cltab_alias: config centerline name -> key of cltab.pkl, for tables written with other keys (the Brenta cl2.py used 'main'/'vecchio'). ray_range: half length of the normal; station_radius: a top vertex takes the shift of the nearest top station within this distance; min_shift: smaller shifts are ignored; oblique_cos: forced T vertices slide along the incident line when its cosine with the normal exceeds this.",
+      "cltab_alias": {},
+      "ray_range": 1500.0,
+      "station_radius": 3.0,
+      "min_shift": 0.001,
+      "oblique_cos": 0.5
+    },
+    "placement": {
+      "_comment": "place.py / dp.py / export_sec.py / assemble.py. Weights: the cost of a candidate section is the sum of boundary*hitB + inner*hitO + obstacle (crossing a section of an earlier reach) + near*(toe crossings closer than rules.near_node.radius to a toe vertex) + xn*(toe crossings closer than that radius to a meeting point of nodestring and breakline) + angle*(crossings sharper than rules.min_angle_deg) + perp*(deviation in degrees from the perpendicular of the longer chord); a step costs step*(distance - spacing)^2 and, if the chord between two centre points is outside spacing +- tol, chord_base + chord*|chord - spacing|; invalid = candidate without toe/top on both sides or in a keep-clear zone.",
+      "toe_classes": [
+        "bed"
+      ],
+      "top_classes": [
+        "bed",
+        "bank",
+        "wall"
+      ],
+      "candidate_step": 0.25,
+      "ray_range": 1500,
+      "tangent_half": 1.0,
+      "perp_window": 10.0,
+      "extent_beyond_toe": 15.0,
+      "extent_inside_top": 5.0,
+      "wide_section": 30.0,
+      "min_beyond_toe": 0.5,
+      "angle_penalty": true,
+      "weights": {
+        "boundary": 10000,
+        "inner": 1000,
+        "obstacle": 100000,
+        "near": 1,
+        "xn": 50,
+        "angle": 1,
+        "perp": 0.0,
+        "step": 0.01,
+        "chord_base": 500,
+        "chord": 100,
+        "invalid": 1000000000.0
+      },
+      "end_gap": 5.0,
+      "farthest_back": 0.75,
+      "reachable_below": 10000,
+      "keep_clear": []
+    },
+    "assemble": {
+      "_comment": "side_overrides: the bankpoint of one side of a section is replaced by the one computed for a pseudo-section (files relative to the working folder; first record used). Brenta: N16050 is extended to the right channel.",
+      "side_overrides": []
+    }
+  },
+  "centerlines": [
+    {
+      "name": "<line name>",
+      "from": "<nodestring name or [x, y]>",
+      "to": "<nodestring name, [x, y] or join:<other line>>",
+      "waypoints": [],
+      "cost": "centre"
+    }
+  ],
+  "widening": {
+    "_comment": "zones: first matching zone wins (s_from <= s <= s_to along the 1 m centerline of cltab.pkl, s_to null = no limit). mode 'corridor': top-to-top width >= min, shift split symmetrically; mode 'bank': each bank, toe to top, >= min. check_min (optional) = limit used by check_widen.py (default min). Distances in metres.",
+    "enabled": "<ASK>",
+    "bank_class": "bank",
+    "wall_classes": [
+      "wall"
+    ],
+    "zones": [],
+    "min_gap_outer": 5.0,
+    "simplify": 0.02,
+    "merge": 2.0,
+    "never_move": []
+  }
+}

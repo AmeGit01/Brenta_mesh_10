@@ -644,3 +644,32 @@ Su indicazione dell'utente ho aggiunto alle eccezioni tutte le osservazioni anco
 2. **`verify3_dtm.py`:** le 1470 quote dei bankpoint coincidono con il DTM.
 3. **Analisi del passo:** l'ho rilanciata con le eccezioni definitive. Le coppie escluse restano 27: entrano N15100–N15150 e N15150–N15200, ed escono B12550–B12600 e B12600–B12650. Senza eccezioni dx_dev_abs resta 0.0854.
 
+
+## 20 novembre 2026: toolkit generico delle sezioni (base per una futura skill)
+
+Su richiesta dell'utente ho preparato in [`skills/river-cross-sections/`](../skills/river-cross-sections/README.md) il materiale per una futura skill di creazione delle sezioni, tutto in inglese. Non è ancora una skill. `scripts/`, `docs/` e i layer del progetto non sono stati modificati, e nessuno script è stato cancellato.
+
+* **Cartella di lavoro:** è quella che contiene `rcs_config.json`; tutti i percorsi sono relativi a essa. Nomi, campi, rami, soglie ed eccezioni del caso stanno nella configurazione, non nel codice. La configurazione del Brenta è `skills/river-cross-sections/reference/brenta/rcs_config.json` ed è ora l'unico posto in cui sono elencate le eccezioni.
+* **Livello A (generico):** 21 script in `skills/river-cross-sections/scripts/`, con le schede in inglese. `write3.py` assorbe anche le funzioni di `write2.py`; `init_outputs.py` e `locked_lines.py` sono nuovi.
+* **Livello B (dipende dal caso):** 17 script originali copiati senza modifiche in `skills/river-cross-sections/reference/brenta/scripts/`, con le schede tradotte.
+* **Esclusi:** gli script superati, quelli esplorativi e l'analisi del passo (`dx_dev`), che andrà in uno strumento separato.
+
+### Verifiche
+
+Ogni script è stato confrontato con l'originale sugli stessi dati, in cartelle di prova usa e getta: `verify3`, `verify3_dtm`, `check_regions`, `sections_csv`, `sync_cp_bp`, `fix_manual`, `drop_regions`, `locked_lines` e `graph` danno risultati identici; `write3` scrive gli stessi layer degli originali; gli script della pipeline sono identici su ingressi ricostruiti, perché i file intermedi di novembre non esistono più. `check_bp` ha avuto solo una prova di funzionamento.
+
+**Nota sui layer attuali:** `verify3` (originale e nuovo) segnala 909 facce, una senza punto regione (247.7 m²), e due punti nuovi `sponda_nat` con `max_area` 2.0, una combinazione che non esiste tra gli originali. Sono modifiche dell'utente successive al 19 novembre sera; i layer non sono stati toccati.
+
+## 20 novembre 2026, pomeriggio: la skill `river-cross-sections`
+
+Su richiesta dell'utente il materiale è diventato una skill completa, in inglese, in [`skills/river-cross-sections/`](../skills/river-cross-sections/SKILL.md). È installata con un collegamento simbolico in `~/.claude/skills/river-cross-sections`, quindi la cartella vera resta nel repo. I layer, `scripts/` e `docs/` del progetto non sono stati modificati.
+
+* **Istruzioni dell'utente incluse:** ruoli delle cartelle con azioni consentite e vietate; informazioni mancanti cercate nel materiale o chieste; piano e domande alla prima interazione (passo, distanza dei nodi vicini, regioni bloccate, fisse e modificabili); "regola dei 5 m" rinominata **regola dei nodi vicini**, con la distanza scelta dall'utente; nessun angolo sotto i 30° dopo le modifiche alle linee; definizione esplicita dei bankpoint; nessun riferimento alle analisi statistiche.
+* **Livello B generico:** linea d'asse, allargamento e posizionamento delle sezioni sono ora script generici guidati dalla configurazione (`centerlines`, `widening`, `reaches`, `anchors`). Sul Brenta riproducono gli originali: linea d'asse e allargamento bit per bit; posizionamento 340/340, 319/320 e 58/58 sezioni non modificate a mano, con i pesi originali.
+* **Script nuovi:** `check_angles.py` (regola dei 30°), `check_mesh.py` (controllo del `.2dm`), `widen_payload.py` (scrittura dell'allargamento).
+
+### Cosa trovano i nuovi controlli sui dati attuali del Brenta
+
+1. `check_angles.py`: 2 angoli nuovi sotto i 30°: breakline 853/1126 a 17.3° vicino a (689818, 5102909), sezione B01750 sulla breakline 1367 a 27.5° vicino a (691509, 5102701). Gli elementi più distorti della mesh (15.9° e 22.5°) cadono negli stessi punti.
+2. `check_mesh.py` su `mesh/10_quality-mesh.2dm`: 38 elementi con materiale 0, centrati in (689502, 5103002), cioè nella faccia senza punto regione segnalata da `verify3`; la mesh è più vecchia dell'ultima modifica dei layer; il lato più corto è 0.55 m (i lati di 0.2 mm alla B12600 non ci sono più).
+3. `verify3.py`: tutto il resto invariato (22 controlli `OK`), con i due punti regione `sponda_nat` con `max_area` 2.0 già segnalati.

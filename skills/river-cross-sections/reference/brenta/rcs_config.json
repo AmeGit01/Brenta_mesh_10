@@ -1,0 +1,790 @@
+{
+  "_comment": "Case configuration of the Brenta (mesh 10, sections every 50 m). All paths are relative to the folder of this file (the working folder). Values reproduce the delivered Brenta work of November 2026. Script-specific parameters are under 'params'.",
+  "project": {
+    "name": "Brenta",
+    "crs": 25832
+  },
+  "python": {
+    "geo": "~/anaconda3/bin/python3",
+    "ogr": "/usr/bin/python3"
+  },
+  "paths": {
+    "layers": "layers",
+    "work": "work",
+    "docs": "docs",
+    "mesh": "mesh"
+  },
+  "inputs": {
+    "breaklines": "breaklines",
+    "boundary": "boundary",
+    "regions": "regioni_ponti",
+    "dtm": "DTM_finale.tif"
+  },
+  "outputs": {
+    "breaklines": "breaklines_50m",
+    "boundary": "boundary_50m",
+    "regions": "regioni_ponti_50m",
+    "centerline": "centerline_50m",
+    "centerpoints": "centerpoints_50m",
+    "bankpoints": "bankpoints_50m",
+    "sections_csv": "docs/Brenta_sections_50m_mesh10.csv"
+  },
+  "fields": {
+    "boundary": {
+      "id": "id",
+      "name": "nome"
+    },
+    "breaklines": {
+      "id": "id"
+    },
+    "regions": {
+      "name": "nome",
+      "mat_id": "mat_id",
+      "max_area": "max_area",
+      "hole": "buco"
+    },
+    "centerline": {
+      "name": "nome",
+      "reach": "ramo",
+      "length": "lung_m",
+      "s0": "s0_asta"
+    },
+    "centerpoints": {
+      "name": "nome",
+      "reach": "stream",
+      "s": "s_m",
+      "dist_next": "dist_next"
+    },
+    "bankpoints": {
+      "name": "nome",
+      "section": "sezione",
+      "s": "s_m",
+      "z": "z_dtm",
+      "dist_cp": "dist_cp",
+      "kind": "tipo",
+      "rule": "regola",
+      "prom": "prom"
+    }
+  },
+  "bankpoint_values": {
+    "left": "sx",
+    "right": "dx",
+    "manual": "manuale",
+    "nodestring": "nodestring",
+    "wall": "muro"
+  },
+  "dtm": {
+    "nodata": -9999
+  },
+  "face_classes": {
+    "_comment": "class of a planar-graph face from the name of its region point; first matching class in 'order' wins.",
+    "order": [
+      "bed",
+      "bank",
+      "wall",
+      "inter"
+    ],
+    "default": "flood",
+    "classes": {
+      "bed": {
+        "names": [
+          "bed",
+          "bed_borgo",
+          "Ponte_Bordignon",
+          "raccordo_sifone_brentavecchio"
+        ],
+        "suffix": [
+          "_bed"
+        ],
+        "prefix": [
+          "source_"
+        ]
+      },
+      "bank": {
+        "prefix": [
+          "sponda"
+        ],
+        "suffix": [
+          "sponda_nat"
+        ]
+      },
+      "wall": {
+        "names": [
+          "muro",
+          "pilone-borgo",
+          "sottopasso-borgo"
+        ]
+      },
+      "inter": {
+        "prefix": [
+          "intermedio"
+        ]
+      }
+    },
+    "fixed": [
+      "bed"
+    ],
+    "editable": [
+      "bank",
+      "inter"
+    ],
+    "fixed_bank_names": [
+      "sponda_antro"
+    ]
+  },
+  "locked": {
+    "_comment": "breaklines bounding regions with these mat_id (walls) are never modified; locked_lines.py writes their fids.",
+    "mat_ids": [
+      11
+    ],
+    "lines_file": "mat11_lines.json"
+  },
+  "originals": {
+    "_comment": "region points of the original layer (fid <= region_fid_max) are never moved; fids expected to be missing in the derived layer (replaced or deleted with the user's consent).",
+    "region_fid_max": 176,
+    "region_fids_replaced": [
+      41
+    ],
+    "region_fids_deleted": [
+      58,
+      65,
+      135
+    ]
+  },
+  "nodestrings": {
+    "_comment": "boundary-condition lines and other non-section nodestrings",
+    "bc_upstream": "BC_caldonazzo",
+    "bc_downstream": "BC_brenta_valle",
+    "count": 53
+  },
+  "sections": {
+    "spacing": 50.0,
+    "tol": 0.5,
+    "digits": 5,
+    "name_pattern": "^[NVB]\\d{5}$",
+    "first_fid": 64,
+    "first_id": 60,
+    "orientation": "left_to_right"
+  },
+  "reaches": [
+    {
+      "code": "N",
+      "centerline": "N_caldonazzo_borgo",
+      "source": "asta_principale",
+      "first_number": 50,
+      "chainage": {
+        "mode": "own"
+      },
+      "start": {
+        "s": 0.0
+      },
+      "end": {
+        "s": 16130.5,
+        "truncate_full": true
+      }
+    },
+    {
+      "code": "V",
+      "centerline": "V_brenta_vecchio",
+      "source": "brenta_vecchio",
+      "first_number": 50,
+      "chainage": {
+        "mode": "own"
+      },
+      "start": {
+        "s": 0.0
+      },
+      "end": {
+        "count": 60,
+        "truncate_full": true,
+        "rule": "farthest",
+        "gap": 0.0
+      }
+    },
+    {
+      "code": "B",
+      "centerline": "B_borgo_valle",
+      "source": "asta_principale",
+      "first_number": 0,
+      "chainage": {
+        "mode": "cut_reference",
+        "reference_file": "layers/centerline_50m_backup_20261117.gpkg",
+        "reference_line": "asta_principale",
+        "origin_section": "B00000"
+      },
+      "start": {
+        "s": 16275.5,
+        "window": 9.5
+      },
+      "end": {
+        "line_end": true,
+        "gap": 13.0
+      }
+    }
+  ],
+  "anchors": [
+    {
+      "section": "B00400",
+      "nodestring": "idrometro_Borgo"
+    }
+  ],
+  "rules": {
+    "min_angle_deg": 30,
+    "near_node": {
+      "radius": 5.0,
+      "slide_margin": 0.05,
+      "max_displacement": 2.0,
+      "ignore_below": 0.001
+    },
+    "regions": {
+      "clearance": 1.0,
+      "snap": 0.001,
+      "sliver_width": 0.001,
+      "robust_rounding": [
+        0.001,
+        0.01
+      ]
+    },
+    "noise": 1e-06
+  },
+  "exceptions": {
+    "angle": [],
+    "_comment": "accepted by the user; every entry needs a reason and a date. A pair is excluded if either section is listed.",
+    "near_node": [
+      {
+        "section": "N16000",
+        "reason": "crossings with the toes 3.13 and 3.06 m from those of nodestring check_portata_Brenta_nuovo, which does not move",
+        "date": "2026-11-18"
+      },
+      {
+        "section": "N02150",
+        "reason": "node shared by breaklines 210 and 1232 at 1.00 m from the crossing with 1232",
+        "date": "2026-11-19"
+      },
+      {
+        "section": "N15150",
+        "reason": "node shared by breaklines 866 and 1151 (edited by the user) at 3.86 m from the crossing",
+        "date": "2026-11-19"
+      }
+    ],
+    "locked_line": [
+      {
+        "section": "B00000",
+        "reason": "near vertex on a locked wall line (2.34 m)",
+        "date": "2026-11-19"
+      },
+      {
+        "section": "B00100",
+        "reason": "near vertex on a locked wall line (2.34, 1.05 m)",
+        "date": "2026-11-18"
+      },
+      {
+        "section": "B00150",
+        "reason": "near vertex on a locked wall line (2.47 m)",
+        "date": "2026-11-18"
+      },
+      {
+        "section": "B00200",
+        "reason": "near vertex on a locked wall line (2.18 m)",
+        "date": "2026-11-18"
+      },
+      {
+        "section": "B00300",
+        "reason": "near vertex on a locked wall line (3.21, 0.87, 0.87 m)",
+        "date": "2026-11-18"
+      },
+      {
+        "section": "B00400",
+        "reason": "near vertex on a locked wall line (3.57 m)",
+        "date": "2026-11-18"
+      },
+      {
+        "section": "B00450",
+        "reason": "near vertex on a locked wall line (1.26, 2.89 m)",
+        "date": "2026-11-19"
+      },
+      {
+        "section": "B00500",
+        "reason": "near vertex on a locked wall line (1.42 m)",
+        "date": "2026-11-18"
+      }
+    ],
+    "spacing": [
+      {
+        "pair": [
+          "N01900",
+          "N01950"
+        ],
+        "reason": "tight bend: 50.5 m along the centerline, 46.68 m straight",
+        "date": "2026-11-18"
+      },
+      {
+        "pair": [
+          "B11200",
+          "B11250"
+        ],
+        "reason": "tight bend near chainage 27470 m: 50.5 m along, 47.85 m straight",
+        "date": "2026-11-18"
+      },
+      {
+        "pair": [
+          "B00250",
+          "B00300"
+        ],
+        "reason": "B00300 moved by hand among the Borgo walls",
+        "date": "2026-11-18"
+      },
+      {
+        "pair": [
+          "B00300",
+          "B00350"
+        ],
+        "reason": "B00300 moved by hand among the Borgo walls",
+        "date": "2026-11-18"
+      },
+      {
+        "pair": [
+          "V01050",
+          "V01100"
+        ],
+        "reason": "V01050 edited by hand for the final mesh (50.517 m)",
+        "date": "2026-11-19"
+      },
+      {
+        "pair": [
+          "B00450",
+          "B00500"
+        ],
+        "reason": "B00450 edited by hand for the final mesh (50.502 m)",
+        "date": "2026-11-19"
+      },
+      {
+        "pair": [
+          "B00900",
+          "B00950"
+        ],
+        "reason": "B00950 edited by hand for the final mesh (50.509 m)",
+        "date": "2026-11-19"
+      },
+      {
+        "pair": [
+          "N01950",
+          "N02000"
+        ],
+        "reason": "50.505 m, a few mm over the limit (N01950 edited by hand)",
+        "date": "2026-11-19"
+      },
+      {
+        "pair": [
+          "B00150",
+          "B00200"
+        ],
+        "reason": "50.504 m, a few mm over the limit (Borgo sections edited by hand)",
+        "date": "2026-11-19"
+      }
+    ]
+  },
+  "params": {
+    "bank": {
+      "_comment": "bankpoint search rule; distances in metres, heights in metres (DTM units)",
+      "min_prominence": 0.05,
+      "lower_fraction": 0.5,
+      "top_buffer": 5.0,
+      "mid_halfwidth": 15.0,
+      "wide_bed": 30.0,
+      "min_window": 2.0,
+      "toe_window": 15.0,
+      "profile_extension": 60.0,
+      "max_distance": 1500.0
+    },
+    "check_bp": {
+      "_comment": "sec_in = bankpoint-computation input in the work folder; stream_prefix maps the tag (or stream) of a sec_in record to the section-name prefix; kind_* = bankpoint kind values; the numbers repeat the limit rule of the bankpoint computation (bank.py): window = min(cap, mid-width+mid_window), or toe+toe_window if the bed is wider than wide_bed or the window is shorter than min_window beyond the toe.",
+      "sec_in": "sec_in.json",
+      "stream_prefix": {
+        "B": "B",
+        "N": "N",
+        "V": "V",
+        "main": "B",
+        "vecchio": "V"
+      },
+      "kind_wall": "muro",
+      "kind_max": "max",
+      "kind_fallback": "fallback",
+      "step": 0.01,
+      "mid_window": 15.0,
+      "toe_window": 15.0,
+      "wide_bed": 30.0,
+      "min_window": 2.0,
+      "prom_min": 0.05,
+      "extra_search": 60.0,
+      "max_search": 1500.0,
+      "tol_z": 1e-06,
+      "tol_kind_z": 0.001,
+      "residual_len": 0.0105
+    },
+    "check_geom": {
+      "_comment": "fids of the derived breaklines excluded from the crossing comparison (those handled by the fix_near_nodes special cases)",
+      "special_breaklines": [
+        1225,
+        987,
+        988
+      ]
+    },
+    "fix_near_nodes": {
+      "_comment": "special cases are Brenta-specific breaklines (fids of the derived breakline layer). laid_on_section: a breakline lying exactly on the section (its ends slide to the crossings of the section with their host toe lines). source_strip: upstream breakline laid on the section, downstream one slid to rules.near_node (radius + slide_margin) from the crossings.",
+      "laid_on_section": [
+        {
+          "breakline": 1225,
+          "section": "N15050"
+        }
+      ],
+      "source_strip": [
+        {
+          "upstream": 987,
+          "downstream": 988,
+          "section": "N11750"
+        }
+      ],
+      "slide_step": 0.01,
+      "max_slide": 6.0,
+      "max_iterations": 40,
+      "check_spacing": 0.25
+    },
+    "fix_bridges": {
+      "_comment": "tol: a breakline vertex closer than this (m) to the nodestring is 'on' it; min_overlap: length (m) of a breakline along a nodestring that makes a pair; max_shift: acceptance limit on the displacement (m); nodestring_regex: only nodestrings with a matching name are examined (null = all); exclude: pairs [breakline fid, nodestring] found by the detection but deliberately not fixed.",
+      "tol": 1e-06,
+      "min_overlap": 0.01,
+      "max_shift": 1e-06,
+      "nodestring_regex": "^P[0-9]+_",
+      "exclude": [
+        [
+          1117,
+          "P27_monte"
+        ],
+        [
+          436,
+          "P13_valle"
+        ],
+        [
+          440,
+          "P13_valle"
+        ],
+        [
+          648,
+          "P20_valle"
+        ],
+        [
+          784,
+          "P27_monte"
+        ],
+        [
+          786,
+          "P27_valle"
+        ]
+      ],
+      "exclude_reason": "Brenta: 1117 would cross breakline 1122 after the fix (acceptance check 4); the others only touch a nodestring end at 1e-10 m and were not fixed in the Brenta project (no slivers observed)."
+    },
+    "fix_manual": {
+      "near": 0.05,
+      "polylabel_tol": 0.01,
+      "end_gap_report": 0.01
+    },
+    "locked_lines": {
+      "buffer": 1e-06,
+      "min_shared": 0.01
+    },
+    "next_bed": {
+      "_comment": "distances in metres along the section normal",
+      "ray_range": 1500,
+      "margin_before_edge": 0.5,
+      "own_toe_skip": 0.05,
+      "search_past_toe": 15,
+      "window_margin": 2
+    },
+    "obst": {
+      "_comment": "distances in metres along the section normal",
+      "ray_range": 1500,
+      "margin_before_edge": 0.5,
+      "own_toe_skip": 0.05,
+      "top_tolerance": 1e-06
+    },
+    "prep_write": {
+      "_comment": "centerline_sources: per reach code, the source line the centerline is cut from. file = GeoPackage relative to the working folder; line = name in the centerline name field; start = 'zero' or 'first_section_s_asta' (chainage of the first section of the reach on the source line); end = 'last_section_s' (chainage of the last section) or 'line_end'; s0_from_start = write the start chainage as s0 (else null).",
+      "centerline_sources": {
+        "N": {
+          "file": "layers/centerline_50m_backup_20261117.gpkg",
+          "line": "asta_principale",
+          "start": "zero",
+          "end": "last_section_s",
+          "s0_from_start": true
+        },
+        "V": {
+          "file": "layers/centerline_50m_backup_20261117.gpkg",
+          "line": "brenta_vecchio",
+          "start": "zero",
+          "end": "last_section_s",
+          "s0_from_start": false
+        },
+        "B": {
+          "file": "layers/centerline_50m_backup_20261117.gpkg",
+          "line": "asta_principale",
+          "start": "first_section_s_asta",
+          "end": "line_end",
+          "s0_from_start": true
+        }
+      },
+      "manual_threshold": 1e-06,
+      "changed_threshold": 1e-12
+    },
+    "regions2": {
+      "_comment": "preserved_pairs: faces that already hold exactly these region point fids (pre-existing pair in the original data) are left as they are; report_points: fids whose status is printed",
+      "preserved_pairs": [
+        [
+          57,
+          58
+        ]
+      ],
+      "report_points": [
+        485,
+        504,
+        568
+      ],
+      "polylabel_tolerance": 0.02
+    },
+    "sections_csv": {
+      "_comment": "titles of the 14 CSV columns, in order: section, reach, chainage, then left z/dist_cp/kind/rule/prom, right z/dist_cp/kind/rule/prom, section length",
+      "header": [
+        "sezione",
+        "ramo",
+        "s_m",
+        "z_sx",
+        "dist_cp_sx",
+        "tipo_sx",
+        "regola_sx",
+        "prom_sx",
+        "z_dx",
+        "dist_cp_dx",
+        "tipo_dx",
+        "regola_dx",
+        "prom_dx",
+        "lunghezza_m"
+      ]
+    },
+    "verify3": {
+      "_comment": "kinds = allowed bankpoint kind values; kind_max/kind_wall = kind names of the DTM-maximum and wall bankpoints (kind_wall is also its rule value); prom_min = minimum prominence (m) of a kind_max bankpoint; notes = optional text appended to three check lines (history of the accepted differences in this case).",
+      "kinds": [
+        "max",
+        "fallback",
+        "muro",
+        "manuale",
+        "nodestring",
+        "nobank",
+        "nodata"
+      ],
+      "kind_max": "max",
+      "kind_wall": "muro",
+      "prom_min": 0.05,
+      "notes": {
+        "multi": "fid 58 deleted on 19 Nov",
+        "null": "fid 65, 135 deleted on 19 Nov",
+        "moved": "replaced on 9 Nov"
+      }
+    },
+    "skel": {
+      "bed_classes": [
+        "bed"
+      ],
+      "corridor_classes": [
+        "bed",
+        "bank",
+        "wall"
+      ],
+      "buffer": 0.02,
+      "seed_spacing": 1.5,
+      "max_edge": 30
+    },
+    "cl": {
+      "bed_classes": [
+        "bed"
+      ],
+      "buffer": 0.02,
+      "min_island_area": 1000,
+      "seed_spacing": 0.6,
+      "max_edge": 40,
+      "min_boundary_dist": 0.15,
+      "bridge_min_nodes": 80,
+      "bridge_max_gap": 25,
+      "bridge_min_sep": 50,
+      "bridge_cost_factor": 2
+    },
+    "cl2": {
+      "toe_classes": [
+        "bed"
+      ],
+      "top_classes": [
+        "bed",
+        "bank",
+        "wall"
+      ],
+      "resample_step": 1.0,
+      "sigma_narrow": 6,
+      "sigma_wide": 60,
+      "sigma_width": 50,
+      "width_narrow": 15,
+      "width_wide": 50,
+      "width_default": 10.0,
+      "normal_step": 10,
+      "ray_range": 1500,
+      "report_lines": [
+        "asta_principale"
+      ],
+      "report_block": 3000,
+      "report_thresholds": [
+        10,
+        20
+      ],
+      "plot_line": "asta_principale"
+    },
+    "widen": {
+      "_comment": "cltab_alias: config centerline name -> key of cltab.pkl, for tables written with other keys (the Brenta cl2.py used 'main'/'vecchio'). ray_range: half length of the normal; station_radius: a top vertex takes the shift of the nearest top station within this distance; min_shift: smaller shifts are ignored; oblique_cos: forced T vertices slide along the incident line when its cosine with the normal exceeds this.",
+      "cltab_alias": {},
+      "ray_range": 1500.0,
+      "station_radius": 3.0,
+      "min_shift": 0.001,
+      "oblique_cos": 0.5
+    },
+    "placement": {
+      "_comment": "place.py / dp.py / export_sec.py / assemble.py. Weights: the cost of a candidate section is the sum of boundary*hitB + inner*hitO + obstacle (crossing a section of an earlier reach) + near*(toe crossings closer than rules.near_node.radius to a toe vertex) + xn*(toe crossings closer than that radius to a meeting point of nodestring and breakline) + angle*(crossings sharper than rules.min_angle_deg) + perp*(deviation in degrees from the perpendicular of the longer chord); a step costs step*(distance - spacing)^2 and, if the chord between two centre points is outside spacing +- tol, chord_base + chord*|chord - spacing|; invalid = candidate without toe/top on both sides or in a keep-clear zone.",
+      "toe_classes": [
+        "bed"
+      ],
+      "top_classes": [
+        "bed",
+        "bank",
+        "wall"
+      ],
+      "candidate_step": 0.25,
+      "ray_range": 1500,
+      "tangent_half": 1.0,
+      "perp_window": 10.0,
+      "extent_beyond_toe": 15.0,
+      "extent_inside_top": 5.0,
+      "wide_section": 30.0,
+      "min_beyond_toe": 0.5,
+      "angle_penalty": true,
+      "weights": {
+        "boundary": 10000,
+        "inner": 1000,
+        "obstacle": 100000,
+        "near": 1,
+        "xn": 50,
+        "angle": 1,
+        "perp": 0.0,
+        "step": 0.01,
+        "chord_base": 500,
+        "chord": 100,
+        "invalid": 1000000000.0
+      },
+      "end_gap": 5.0,
+      "farthest_back": 0.75,
+      "reachable_below": 10000,
+      "keep_clear": [
+        {
+          "_comment": "no section of reach B between 5 m upstream and 20 m downstream of the crossing of this nodestring with the source centerline (Brenta: the bridge at Borgo).",
+          "nodestring": "Ponte_Bordignon_monte",
+          "source": "asta_principale",
+          "before": 5.0,
+          "after": 20.0,
+          "reach": [
+            "B"
+          ]
+        }
+      ]
+    },
+    "assemble": {
+      "_comment": "side_overrides: the bankpoint of one side of a section is replaced by the one computed for a pseudo-section (files relative to the working folder; first record used). Brenta: N16050 is extended to the right channel.",
+      "side_overrides": [
+        {
+          "section": "N16050",
+          "side": "right",
+          "sec_in": "s16130/work/sec_in.json",
+          "bank_out": "s16130/work/bank_out.json",
+          "rule": "canale_dx"
+        }
+      ]
+    }
+  },
+  "centerlines": [
+    {
+      "_comment": "Brenta main channel: plain least-cost path (no waypoints needed: the cost chooses the main branch at the split between E 677880 and 678420).",
+      "name": "asta_principale",
+      "from": "BC_caldonazzo",
+      "to": "BC_brenta_valle",
+      "cost": "centre"
+    },
+    {
+      "_comment": "Brenta vecchio branch: shortest path (cost 'length') through two hand-chosen points and three nodestrings, then to the confluence with the main channel at join_point.",
+      "name": "brenta_vecchio",
+      "from": "divergenza_valle_brenta_vecchio",
+      "waypoints": [
+        [
+          687960.0,
+          5102512.0
+        ],
+        [
+          688400.0,
+          5102655.0
+        ],
+        "boale_brenta_vecchio_monte",
+        "boale_brenta_vecchio_valle",
+        "check_portata_Brenta_vecchio"
+      ],
+      "to": "join:asta_principale",
+      "join_point": [
+        689850.0,
+        5102944.0
+      ],
+      "cost": "length"
+    }
+  ],
+  "widening": {
+    "_comment": "zones: first matching zone wins (s_from <= s <= s_to along the 1 m centerline of cltab.pkl, s_to null = no limit). mode 'corridor': top-to-top width >= min, shift split symmetrically; mode 'bank': each bank, toe to top, >= min. check_min (optional) = limit used by check_widen.py (default min). Distances in metres.",
+    "enabled": true,
+    "bank_class": "bank",
+    "wall_classes": [
+      "wall"
+    ],
+    "zones": [
+      {
+        "centerline": "asta_principale",
+        "s_from": 0,
+        "s_to": 17335,
+        "mode": "corridor",
+        "min": 40.1,
+        "check_min": 40.0
+      },
+      {
+        "centerline": "asta_principale",
+        "s_from": 17335,
+        "s_to": null,
+        "mode": "bank",
+        "min": 16.05,
+        "check_min": 16.0
+      },
+      {
+        "centerline": "brenta_vecchio",
+        "s_from": 0,
+        "s_to": null,
+        "mode": "corridor",
+        "min": 40.1,
+        "check_min": 40.0
+      }
+    ],
+    "min_gap_outer": 5.0,
+    "simplify": 0.02,
+    "merge": 2.0,
+    "never_move": [
+      "sponda_antro"
+    ]
+  }
+}
