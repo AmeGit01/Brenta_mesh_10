@@ -42,7 +42,7 @@ This file is for whoever maintains the skill. To use the skill, read [SKILL.md](
 | `write3.py` | `write3.py`, `write2.py` | Single writer; refuses open layers. |
 | `sync_cp_bp.py`, `fix_manual.py`, `drop_regions.py`, `fix_bridges.py` | same | `fix_bridges` finds the pairs by itself; angle acceptance. |
 | `verify3.py`, `verify3_dtm.py`, `check_bp.py`, `check_regions.py`, `sections_csv.py` | same | Expected counts derived from the data. |
-| `init_outputs.py`, `locked_lines.py`, `check_angles.py`, `check_mesh.py` | new | `locked_lines` comes from part of `prep_inputs_nvb.py`. |
+| `init_outputs.py`, `locked_lines.py`, `check_angles.py`, `check_mesh.py`, `snap_near_nodes.py` | new | `locked_lines` comes from part of `prep_inputs_nvb.py`. |
 
 Brenta scripts left out:
 * **Superseded:** `write.py`, `write2.py`, `dump.py`, `regions.py`, `finals.py`, `check.py`, `verify2.py`, `final.py`.

@@ -1,283 +1,266 @@
 # Brenta: regole e metodo
 
-Questo documento raccoglie le regole con cui è stata preparata la geometria della mesh del Brenta, e con cui va portato avanti il lavoro. Spiega cosa si fa e perché. Cosa è stato fatto concretamente, con date, numeri e verifiche, è invece nel registro [workflow.md](workflow.md).
+Questo documento descrive le regole con cui è preparata la geometria della mesh del Brenta e **lo stato attuale** dei dati. Cosa è stato fatto e quando, con numeri e verifiche, è nel registro [workflow.md](workflow.md). La storia del metodo è riassunta al §15.
 
 ## 1. Il progetto
 
 Il lavoro riguarda un modello idrodinamico bidimensionale del fiume Brenta, da calcolare con **BASEMENT v3** (ETH Zurigo). La mesh non strutturata si costruisce in QGIS con il plugin **BASEmesh**. Tutti i dati sono nel sistema di riferimento **EPSG:25832**.
 
-Il dominio copre circa 34 km di asta principale, dalla condizione al contorno di monte `BC_caldonazzo` a quella di valle `BC_brenta_valle`, più il ramo del Brenta vecchio, che si stacca a Borgo e rientra più a valle.
+Il dominio copre circa 34 km di asta principale, dalla condizione al contorno di monte `BC_caldonazzo` a quella di valle `BC_brenta_valle`, più il Brenta vecchio, che si stacca a Borgo e rientra più a valle.
 
-Alla confluenza di Borgo la geometria non è riproducibile da un modello 1D. Per questo le sezioni sono divise in **tre rami indipendenti**, ognuno chiuso da condizioni al contorno nel modello 1D:
+Le sezioni trasversali sono ogni **50 ± 0.5 m** lungo l'alveo e sono divise in **due rami indipendenti**:
 
-* **N:** da Caldonazzo a Borgo, fino alla sezione N16050, che attraversa sia il canale principale sia quello parallelo di destra;
-* **V:** il Brenta vecchio, fino alla V03000;
-* **B:** da Borgo a valle, a partire dalla B00000. La B00050 sta a monte del Ponte Bordignon.
+* **V, Brenta vecchio:** dalla **V00000** alla V03000, cioè 61 sezioni. La V00000 è la nodestring della divergenza dall'asta principale.
+* **B, asta principale:** da Caldonazzo a valle, dalla **B00000** alla B33800, cioè 677 sezioni. La B00000 è a 23.02 m dal BC di monte. La B16550 coincide con l'idrometro di Borgo.
 
-Nella mesh 2D i tre rami restano collegati. Tra la fine di N e V e l'inizio di B c'è un tratto senza sezioni.
-
-L'obiettivo di questa fase è dotare la mesh di **sezioni trasversali ogni 50 m** (con tolleranza di ± 0.5 m) lungo l'alveo. Ogni sezione va da un punto di sponda a quello opposto ed è usata in BASEMENT come nodestring di controllo. Per arrivarci servono quattro passi: la linea d'asse dell'alveo, l'allargamento delle sponde, i punti di sponda (bankpoint) e i punti regione delle nuove facce.
+Ogni sezione va da un punto di sponda (bankpoint) a quello opposto ed è usata in BASEMENT come nodestring di controllo.
 
 ## 2. Come si lavora
 
-Si lavora soltanto nelle cartelle `layers/` (dati), `docs/` (documentazione) e `scripts/` (codice). La mesh in `mesh/`, i file di modello `model_*.json` e il progetto QGIS non si toccano. Se un cambiamento li riguarda, si preparano le istruzioni o il frammento di testo da incollare, e lo applica l'utente.
-
-**I layer originali non si modificano.** Ogni risultato si scrive in un file nuovo con suffisso, in questa fase `_50m`. A fine lavoro si controlla con l'impronta SHA-256 che gli originali siano rimasti identici. Se un giorno fosse necessario scrivere su un layer esistente, prima si fa una copia datata (`<layer>_backup_AAAAMMGG.gpkg`) e la si confronta byte per byte. Inoltre l'utente deve chiudere il layer in QGIS mentre viene scritto.
-
-Prima di un'operazione sostanziale si espongono metodo, modifiche previste e domande aperte, e si aspetta la conferma dell'utente. Le cancellazioni e le altre azioni irreversibili richiedono sempre un consenso esplicito.
-
-Tutte le verifiche si eseguono sui file **riletti dal disco** e con codice diverso da quello che li ha prodotti. Così un errore nel codice di produzione non può nascondersi dietro lo stesso errore nel controllo. L'esito si riporta come elenco numerato.
-
-Ogni azione utile al flusso di lavoro si annota in `docs/workflow.md`; le semplici operazioni sui file (rinominare, spostare) no. Gli script stanno in `scripts/`, quelli usati solo per ispezioni e grafici in `scripts/esplorativi/`. Ognuno ha commenti in inglese nel codice e una scheda in italiano in `docs/scripts/`, che spiega come usarlo. L'ordine di esecuzione è in `docs/scripts/README.md`.
+* **Cartelle:** si lavora soltanto in `layers/` (dati), `docs/` (documentazione) e `scripts/` (codice).
+* **File che non si toccano:** la mesh in `mesh/`, i file di modello `model_*.json` e il progetto QGIS. Se un cambiamento li riguarda, si preparano le istruzioni o il testo da incollare, e lo applica l'utente.
+* **Layer originali:** non si modificano. I risultati sono nei layer con suffisso `_50m`.
+* **Prima di riscrivere un layer `_50m`:**
+  * se ne fa una copia con etichetta (`<layer>_backup_AAAAMMGG<lettera>.gpkg`), verificata con SHA-256;
+  * l'utente deve aver chiuso il layer in QGIS. Un file `-wal` accanto al layer vuol dire che è ancora aperto.
+* **Consenso dell'utente:** prima di un'operazione sostanziale si espongono metodo, modifiche e domande, e si aspetta la conferma. Le cancellazioni richiedono sempre un consenso esplicito.
+* **Verifiche:** si fanno sui file **riletti dal disco**, con codice diverso da quello che li ha prodotti. L'esito si riporta come elenco numerato.
+* **Registro:** ogni azione utile al flusso di lavoro si annota in `docs/workflow.md`.
+* **Script del progetto:** stanno in `scripts/`, con commenti in inglese e una scheda in italiano in `docs/scripts/`.
+* **Script della skill:** dal 24 novembre calcoli, scritture e verifiche usano gli script della skill `skills/river-cross-sections/`, con la configurazione [rcs_config_brenta_vb.json](rcs_config_brenta_vb.json). Gli script del progetto che hanno i vecchi rami N/V/B scritti nel codice non valgono per lo stato attuale.
 
 ## 3. I dati
 
 ### 3.1 Il DTM
 
-Il terreno è descritto da `layers/DTM_finale.tif`: celle di 0.25 m, compressione DEFLATE, nodata −9999. Si legge sempre il **valore della cella** che contiene il punto, lo stesso che restituisce lo strumento *Identify* di QGIS. Non si interpola mai: un valore interpolato non esiste nel DTM e non sarebbe ripetibile da chi controlla in QGIS.
+Il terreno è descritto da `layers/DTM_finale.tif`: celle di 0.25 m, nodata −9999. Si legge sempre il **valore della cella** che contiene il punto, lo stesso che restituisce lo strumento *Identify* di QGIS. Non si interpola mai.
 
 ### 3.2 I layer
 
-I campi dei layer hanno nomi italiani. `sx` e `dx` indicano la sinistra e la destra orografica, cioè guardando verso valle. Il ciglio è il bordo superiore della sponda, il piede quello inferiore, a contatto con il letto.
+I campi hanno nomi italiani. `sx` e `dx` indicano la sinistra e la destra orografica, cioè guardando verso valle. Il ciglio è il bordo superiore della sponda; il piede è quello inferiore, a contatto con il letto.
 
 | File | Origine | Contenuto |
 |---|---|---|
-| `breaklines.gpkg` | originale | 1285 linee di discontinuità, con i cigli non ancora allargati. 14 righe hanno geometria vuota o nulla. |
-| `boundary.gpkg` | originale | 53 nodestring: condizioni al contorno, ponti P13, P17, P20 e P27, Bordignon, Filippini, edifici di Borgo, divergenza, boale e altre. Nessuna sezione. |
-| `regioni_ponti.gpkg` | originale | 176 punti regione. I fid 65 e 135 hanno geometria nulla; i fid 57 e 58 (`muro`) cadono nella stessa faccia. |
-| `quote_fisse.gpkg`, `punti_quote_fisse.gpkg`, `quote_fisse_elevation-mesh.2dm` | originali | Non usati in questa fase. |
-| `centerline_50m.gpkg` | nuovo | Tre linee d'asse, una per ramo: `N_caldonazzo_borgo`, `V_brenta_vecchio`, `B_borgo_valle`. Il campo `s0_asta` dà la progressiva sull'asta da cui parte B. |
-| `centerpoints_50m.gpkg` | nuovo | 735 punti, uno per sezione. `stream` indica il ramo (N, V, B), `s_m` la progressiva reale nel ramo. |
-| `bankpoints_50m.gpkg` | nuovo | 1470 punti di sponda, due per sezione. |
-| `breaklines_50m.gpkg` | nuovo | Breakline con i cigli allargati e corrette per la regola dei 5 m. |
-| `boundary_50m.gpkg` | nuovo | Le 53 nodestring più le 735 sezioni dei tre rami. |
-| `regioni_ponti_50m.gpkg` | nuovo | 906 punti, tutti con geometria, uno per ogni faccia del grafo. Le righe senza geometria (fid 65 e 135) e il doppione 58 sono stati eliminati il 19 novembre. |
+| `breaklines.gpkg` | originale | 1285 linee, con i cigli non allargati; 14 righe hanno geometria vuota o nulla. |
+| `boundary.gpkg` | originale | 53 nodestring, nessuna sezione. |
+| `regioni_ponti.gpkg` | originale | 176 punti regione; i fid 65 e 135 hanno geometria nulla, i fid 57 e 58 cadono nella stessa faccia. |
+| `quote_fisse.gpkg`, `punti_quote_fisse.gpkg`, `quote_fisse_elevation-mesh.2dm` | originali | Non usati per le sezioni. |
+| `breaklines_50m.gpkg` | derivato | 1288 linee, di cui 22 con geometria vuota o nulla; le 1462 e 1463 sono i muri aggiunti a mano a Borgo. Hanno i cigli allargati e sono corrette per la regola dei nodi vicini (§9). |
+| `boundary_50m.gpkg` | derivato | 48 nodestring e 738 sezioni. Le sezioni hanno fid da 64 e id da 60, prima le V (V00050–V03000), poi le B. Fa eccezione la V00000, che è la nodestring della divergenza rinominata e mantiene il fid 22. |
+| `regioni_ponti_50m.gpkg` | derivato | 904 punti regione, tutti con geometria, uno per faccia (§10). |
+| `centerline_50m.gpkg` | derivato | Due linee d'asse: `V_brenta_vecchio`, dalla V00000 alla confluenza, e `B_caldonazzo_valle`, tutta l'asta con `s0_asta` = 0. |
+| `centerpoints_50m.gpkg` | derivato | 738 punti, uno per sezione. `stream` indica il ramo, `s_m` la progressiva reale nel ramo, `dist_next` la distanza dalla sezione successiva. |
+| `bankpoints_50m.gpkg` | derivato | 1476 punti, due per sezione (`<sezione>_sx`, `<sezione>_dx`). |
 
-Prima di riscrivere un file `_50m` se ne fa una copia datata (`_backup_AAAAMMGG`).
+I punti regione portano il nome, il materiale (`mat_id`), l'area massima degli elementi (`max_area`) e il flag `buco`. Le combinazioni di questi valori nei dati originali definiscono i materiali del modello.
 
-I punti regione portano, oltre al nome, il materiale (`mat_id`) e l'area massima degli elementi (`max_area`). Nei dati originali ci sono 29 combinazioni di questi tre valori, e sono queste a definire i materiali del modello.
-
-La tabella completa delle 735 sezioni è in `docs/Brenta_sections_50m_mesh10.csv`.
+La tabella di tutte le sezioni è [Brenta_sections_50m_mesh10.csv](Brenta_sections_50m_mesh10.csv).
 
 ## 4. Come ragiona BASEmesh
 
-Alcune caratteristiche di BASEmesh condizionano tutto il resto, e conviene averle chiare.
-
-**I nomi delle nodestring devono essere univoci.** Se due stringhe hanno lo stesso nome, BASEmesh tiene l'ultima e scarta l'altra senza avvisare.
-
-**Ogni nodestring deve essere una linea a una sola parte.** Il formato è MultiLineStringZM con Z = M = 0. BASEmesh ordina i nodi di una stringa per distanza dal primo vertice, quindi in una stringa fatta di più pezzi i nodi dei vari pezzi si mescolerebbero. Un nodo che cade entro la tolleranza di due stringhe compare in entrambe.
-
-**Le sezioni si disegnano da sinistra a destra orografica.** In BASEMENT questo corrisponde a `upstream_direction: "right"`.
-
-**Ogni regione chiusa deve contenere esattamente un punto regione.** Le breakline e le nodestring insieme dividono il piano in facce, il cosiddetto grafo planare. BASEmesh assegna a ogni faccia gli attributi del punto che vi cade dentro. Una faccia senza punto resta senza materiale; una con due punti ha attributi ambigui. Ogni volta che si aggiunge o si sposta una linea, quindi, va ricontato il grafo. Lo si ricostruisce con codice proprio prima di scrivere, collegando le estremità che toccano un'altra linea entro 1 mm. Sui layer originali il grafo ha 173 facce. Molte estremità sono agganciate al tratto interno di un'altra linea e, per l'aritmetica in virgola mobile, ne distano 10⁻¹¹–10⁻⁹ m: vanno collegate (tolleranza 1 mm), altrimenti il grafo risulta aperto.
-
-Dopo ogni modifica alla geometria la mesh va rigenerata in QGIS. Il blocco `STRINGDEF` dei file di modello deve elencare tutte le nodestring, comprese le nuove sezioni.
+* **I nomi delle nodestring sono univoci.** Se due stringhe hanno lo stesso nome, BASEmesh tiene l'ultima e scarta l'altra senza avvisare.
+* **Ogni nodestring è una linea a una sola parte,** in formato MultiLineStringZM con Z = M = 0. BASEmesh ordina i nodi di una stringa per distanza dal primo vertice, quindi i pezzi di una stringa multipla si mescolerebbero.
+* **Le sezioni vanno da sinistra a destra orografica.** In BASEMENT corrisponde a `upstream_direction: "right"`.
+* **Ogni faccia del grafo planare ha esattamente un punto regione** (§10).
+* **Dopo ogni modifica alla geometria si rigenera la mesh.** Il blocco `STRINGDEF` dei file di modello deve elencare tutte le nodestring con i nomi attuali.
 
 ## 5. La linea d'asse
 
-Le sezioni si posizionano lungo una linea d'asse che segue il centro dell'alveo. La progressiva `s` si misura lungo questa linea, a partire da zero all'inizio di ogni ramo.
+Le sezioni si posizionano lungo una linea d'asse che segue il centro dell'alveo. La progressiva `s` si misura lungo questa linea, da zero all'inizio di ogni ramo.
 
-La linea d'asse dell'**asta principale** si ricava dallo scheletro di Voronoi del poligono d'alveo. Tra tutti i percorsi dello scheletro da `BC_caldonazzo` a `BC_brenta_valle` si sceglie quello che resta più vicino al centro del letto. Nel poligono d'alveo si conservano i buchi più grandi di 1000 m²: riempirli farebbe collassare i rami. Tra E 677880 e 678420 l'alveo si divide in due. L'asta segue il collegamento nord, più largo (letto mediano 7.4 m contro 4.9 m), e il meandro sud resta senza sezioni.
+* **Asta principale (ramo B).** È il percorso dello scheletro di Voronoi del poligono d'alveo che va da `BC_caldonazzo` a `BC_brenta_valle` restando più vicino al centro del letto.
+  * Nel poligono si conservano i buchi più grandi di 1000 m².
+  * Tra E 677880 e 678420 l'alveo si divide: l'asta segue il collegamento nord, più largo, e il meandro sud resta senza sezioni.
+* **Brenta vecchio (ramo V).** Va dalla nodestring della divergenza (V00000) alla confluenza, intorno a E 689850. Il percorso passa per alcuni punti di passaggio, per non deviare nella striscia del boale né nel collegamento `boale_sifone`.
+* **Lisciatura.** La linea è lisciata con un filtro gaussiano di ampiezza variabile: 6 m dove il letto è stretto, fino a 60 m dove è largo.
 
-Il **Brenta vecchio** parte dalla nodestring `divergenza_valle_brenta_vecchio` e arriva alla confluenza, intorno a E 689850. Il percorso è guidato da alcuni punti di passaggio sul letto principale, in modo da non deviare nella striscia parallela del boale né nel collegamento `boale_sifone`.
-
-Lo scheletro è spezzettato, quindi la linea viene lisciata con un filtro gaussiano di ampiezza variabile: 6 m dove il letto è stretto, fino a 60 m dove è largo.
+Ogni linea d'asse arriva fino alla fine della sua linea d'origine, non solo fino all'ultima sezione. Così una sezione spostata a mano oltre l'ultima posizione la incrocia comunque.
 
 ## 6. L'allargamento delle sponde
 
-### 6.1 Perché
+Il bankpoint deve stare abbastanza lontano dal ciglio e la sezione deve restare compatta. Per conciliare le due cose letto e sponde devono formare un corridoio abbastanza largo. Dove non lo è, i cigli (il confine tra sponda e fascia intermedia) sono stati spostati verso l'esterno; i piedi restano dove sono.
 
-Il bankpoint deve stare abbastanza lontano dal ciglio (almeno 5 m) e le sezioni non devono diventare troppo lunghe. Per conciliare le due cose serve che letto e sponde insieme formino un corridoio di larghezza sufficiente. Nei dati originali, nel tratto tra s = 4.2 e 10.2 km, il corridoio misura in mediana solo 31.7 m. Per questo i cigli vanno spostati verso l'esterno.
+* **Asta a monte di Borgo** (s ≤ 17 335 m sulla linea d'asse con cui è stato calcolato l'allargamento) **e Brenta vecchio:** il corridoio tra i cigli è largo almeno **40.10 m**, con spostamento simmetrico.
+* **A valle di Borgo:** ogni sponda è larga almeno **16.05 m**, sponda per sponda.
+* **Linee che non si spostano mai:** sponde urbane (`sponda_antro`) e muri.
+* **Distanza dalla linea successiva:** il ciglio spostato resta ad almeno **5 m** da quella verso l'esterno.
+* **Topologia:**
+  * ogni tratto di ciglio conserva il proprio fid e resta collegato ai vicini;
+  * le estremità scorrono lungo le linee su cui terminano;
+  * le chiusure dei ponti contengono esattamente i vertici della nodestring del ponte;
+  * gli innesti a T hanno un vertice comune.
 
-### 6.2 Il criterio
-
-La larghezza W tra i due cigli si misura ogni metro, perpendicolarmente alla linea d'asse. Si spostano soltanto le linee di ciglio (il confine tra sponda e fascia intermedia); i piedi di sponda restano dove sono.
-
-* **A monte di Borgo e sul Brenta vecchio** il corridoio deve misurare almeno **40.10 m**. Dove W è inferiore, ciascun ciglio si sposta verso l'esterno di metà della differenza, (40.10 − W)/2, in modo simmetrico. I 10 cm in più rispetto ai 40 m servono ad assorbire la semplificazione successiva delle linee.
-* **A valle di Borgo** (s > 17 335 m) il fiume si allarga molto: il corridoio misura già da 50 a oltre 200 m, e un minimo fisso di 40 m non avrebbe senso. Qui si chiede invece che **ogni sponda** sia larga almeno **16.05 m**. È la larghezza media di una sponda nel tratto di riferimento, (40.10 − 8.1)/2, dove 8.1 m è la larghezza mediana del letto. Lo spostamento si calcola sponda per sponda.
-* Le sponde urbane (`sponda_antro`) e i muri, soprattutto a Borgo, **non si spostano mai**.
-* Il ciglio spostato deve restare ad almeno **5 m** dalla linea successiva verso l'esterno, per non creare strisce troppo sottili.
-
-### 6.3 Come si mantiene la topologia
-
-Spostare un ciglio non deve rompere le regioni. Per questo:
-
-* ogni tratto di ciglio conserva il proprio fid e resta collegato ai tratti vicini;
-* dove il ciglio finisce sul contorno del dominio o su una linea che non si sposta, la sua estremità scorre lungo quella linea;
-* le linee trasversali che terminavano sul ciglio, come le chiusure dei ponti, si prolungano in linea retta fino al nuovo ciglio. Una chiusura che coincide con la nodestring del ponte deve contenerne esattamente i vertici, senza altri vertici nel tratto comune: un vertice anche a 10⁻¹⁰ m dalla nodestring crea una striscia sottilissima tra le due linee (corretto il 19 novembre con `fix_bridges.py`);
-* una nodestring che chiudeva una regione senza una breakline sotto, come `idrometro_Ponte_Zaccon`, si prolunga nella sua stessa direzione (in quel caso di 0.86 e 0.80 m);
-* nei punti in cui una linea si innesta su un'altra a T si inserisce un vertice comune, così non nascono facce minuscole.
-
-Le nuove linee si semplificano con una tolleranza di 2 cm, e i vertici più vicini di 2 m si fondono. Gli spostamenti inferiori a un milionesimo di metro si ignorano: sono solo rumore numerico.
-
-Alla fine il grafo planare deve avere **le stesse facce di prima**, senza facce nuove né regioni fuse.
+Il grafo planare ha le stesse facce di prima dell'allargamento.
 
 ## 7. Le sezioni
 
-Le sezioni sono distanziate di **50 m ± 0.5 m** misurati lungo la linea d'asse. Si controlla anche la distanza in linea retta tra punti d'asse consecutivi, che nelle curve strette può risultare più corta.
+* **Passo:** le sezioni sono distanziate di **50 ± 0.5 m** lungo la linea d'asse. Si controlla anche la distanza in linea retta tra centerpoint consecutivi, che nelle curve strette risulta più corta.
+* **Direzione:** ogni sezione è perpendicolare alla corda della linea d'asse tra s − 1 m e s + 1 m.
+* **Geometria:** la sezione è un **segmento a due vertici** dal bankpoint sinistro al destro, con i vertici uguali ai bankpoint.
+* **Linee incrociate:** una sezione corretta attraversa solo le due linee di piede. Una sezione che incontra un muro coincidente con il piede si ferma 0.5 m prima e attraversa una sola linea; a Borgo alcune sezioni sistemate a mano terminano esattamente su un muro o sulla nodestring di un edificio.
+* **Scelta delle posizioni:** si fa su tutto il ramo in una volta, con candidati ogni 0.25 m e programmazione dinamica. Le priorità, in ordine:
+  1. non incrociare nodestring o linee trasversali;
+  2. ridurre le violazioni della regola dei nodi vicini (§9);
+  3. tenere il passo vicino a 50 m.
 
-Ogni sezione è **perpendicolare alla corda** della linea d'asse tra s − 1 m e s + 1 m. Usare la corda e non la tangente puntuale rende la direzione meno sensibile alle piccole irregolarità della linea. La sezione è un **segmento a due vertici** che va dal bankpoint sinistro al bankpoint destro; i vertici sono copiati esattamente dalle coordinate dei bankpoint.
-
-La posizione si sceglie su tutto il ramo in una volta, non una sezione alla volta. Si generano candidati ogni 0.25 m lungo la linea d'asse e si cerca la sequenza migliore con la programmazione dinamica. Le priorità, in ordine, sono:
-
-1. non incrociare nodestring o linee trasversali esistenti;
-2. ridurre le violazioni della regola dei 5 m (§9);
-3. tenere il passo il più vicino possibile a 50 m.
-
-La perpendicolarità entra nella scelta come penalità e non come vincolo rigido, altrimenti in alcuni tratti non si troverebbe nessuna sequenza ammissibile. Sul Brenta vecchio anche le sezioni dell'asta principale contano come ostacoli.
-
-Il nome di una sezione è la **lettera del ramo** seguita dalla sua **posizione nel ramo moltiplicata per 50**, a cinque cifre: `N00050` … `N16050`, `V00050` … `V03000`, `B00000` … `B17650`. Il nome è quindi nominale. Su lunghe distanze si discosta dalla posizione vera (alla N16050 la progressiva reale è 16 130 m), che è sempre riportata nel campo `s_m` dei punti d'asse. In `boundary_50m` le sezioni hanno fid da 64 e id da 60, in ordine N, V, B.
-
-**La sezione dell'idrometro di Borgo.** La B00400 coincide esattamente con la nodestring `idrometro_Borgo`: stessi due vertici, con il sinistro per primo. È il punto dove anche nella realtà si misurano le portate, dai livelli, ed è la misura più affidabile di tutto il modello. Per ottenerla tutto il ramo B è stato spostato verso monte di circa 16.6 m rispetto alla disposizione del 17 novembre. Ogni sezione ha come obiettivo la posizione vecchia meno lo spostamento e se ne discosta al massimo di 0.7 m. Il numero di sezioni non cambia. I bankpoint della B00400 sono gli estremi della nodestring, con `tipo` `nodestring`, `regola` `idrometro_Borgo` e la quota della cella. Nessuna sezione cade dentro un ponte: la B00100 è 20 m a valle del Ponte Bordignon e la B17000 9 m a valle del Ponte Filippini.
-
-Una sezione corretta attraversa solo le due linee di piede, e quindi divide soltanto il letto. Fa eccezione la sezione che incontra un muro, come capita a Borgo dove alcuni edifici coincidono con il piede: in quel caso si ferma 0.5 m prima del muro e attraversa una sola linea.
+  La perpendicolarità è una penalità, non un vincolo.
+* **Nomi:** lettera del ramo seguita dalla posizione nel ramo moltiplicata per 50, a cinque cifre: `V00000` … `V03000`, `B00000` … `B33800`. Il nome è nominale; la progressiva vera è in `s_m` dei centerpoint. Per esempio la B16000 è a s = 16 102.77 m.
+* **Sezione dell'idrometro di Borgo:** la **B16550** coincide esattamente con la nodestring `idrometro_Borgo` (stessi due vertici, il sinistro per primo). È la misura di portata più affidabile del modello. I suoi bankpoint sono gli estremi della nodestring, con `tipo` `nodestring` e `regola` `idrometro_Borgo`.
+* **V00000:** è la nodestring della divergenza. I suoi bankpoint sono i due estremi, con `tipo` `nodestring` e `regola` `V00000`; il centerpoint è l'incrocio con la linea d'asse V.
+* **Ponti:** nessuna sezione cade dentro un ponte. La B16250 è 20 m a valle del Ponte Bordignon e la B33150 9 m a valle del Ponte Filippini.
 
 ## 8. I bankpoint
 
-Il bankpoint è il punto in cui la sezione finisce su ciascuna sponda. Si cerca il primo rilievo significativo che si incontra salendo dal letto verso l'esterno, non il punto più alto in assoluto: l'intento è avere un punto più vicino al canale rispetto alla cella più alta della sponda.
+Il bankpoint è il punto in cui la sezione finisce su ciascuna sponda. È il **primo rilievo significativo** che si incontra salendo dal letto verso l'esterno, non il punto più alto della sponda.
 
-**Il profilo.** Partendo dal piede di sponda e andando verso l'esterno, si visitano una per una tutte le celle del DTM attraversate dalla sezione e se ne legge il valore. Non si campiona a passo fisso: una cella tagliata solo per un angolo potrebbe sfuggire.
+* **Direzione:** la ricerca avviene lungo la sezione, perpendicolare alla linea d'asse.
+* **Profilo:** dal piede verso l'esterno si visitano una per una tutte le celle del DTM attraversate dalla sezione.
+* **Massimo locale:** conta solo se ha una **prominenza** di almeno 5 cm. Si scartano i massimi nella metà inferiore della sponda, cioè sotto z_piede + 0.5·(z_max − z_piede). Si prende il **primo** massimo valido (`tipo` `max`); se non ce n'è, la cella più alta della finestra (`fallback`).
+* **Finestra di ricerca.** Si ferma:
+  * almeno **5 m prima del ciglio**, cioè del bordo della fascia intermedia;
+  * a non più di **15 m dalla mezzeria** del corridoio (`regola` `mid`). Dove il letto è largo più di 30 m, o la mezzeria lascia meno di 2 m oltre il piede, il limite è invece 15 m dal piede (`toe15`);
+  * **0.5 m prima** di una nodestring, di una linea interna o del piede di un altro letto.
+* **Posizione:** il bankpoint sta a metà del tratto di sezione nella cella scelta. Se quella cella contiene l'incrocio con il ciglio, il punto va sull'incrocio.
+* **Sezioni modificate a mano:** il bankpoint segue il nuovo estremo, con `tipo` e `regola` `manuale` e la quota della cella. Anche il centerpoint si aggiorna come incrocio con la linea d'asse, e con lui `s_m`, `dist_next` e `dist_cp`.
+* **Attributi:** `nome`, `sezione`, `s_m`, `z_dtm` (valore della cella), `dist_cp` (distanza dal centerpoint), `tipo`, `regola`, `prom` (la prominenza).
 
-**Il massimo locale.** Un rilievo conta solo se sporge di almeno **5 cm** rispetto al terreno più basso che lo separa da terreno più alto (la sua prominenza). Questo filtra il rumore del DTM. Un tratto piano conta come un unico massimo. Si scartano inoltre i massimi nella **metà inferiore** della sponda, cioè sotto quota z_piede + 0.5·(z_massima − z_piede): sono gobbe al piede, non la sommità.
+## 9. La regola dei nodi vicini
 
-**La scelta.** Si prende il **primo** massimo valido a partire dal canale. Se non ce n'è nessuno, perché il terreno continua a salire, si prende la **cella più alta** dell'intervallo di ricerca.
+Dove una sezione incrocia una breakline nasce un nodo della mesh. Se a breve distanza c'è un vertice di breakline, tra i due nodi si formano elementi minuscoli o molto allungati. Per questo **nessun vertice di breakline deve trovarsi a meno di 2 m da un incrocio** con una sezione. I vertici sugli incroci della stessa sezione non contano.
 
-**L'intervallo di ricerca.** La ricerca si ferma:
+**Come si corregge: si sposta il vertice vicino sull'incrocio** (`snap_near_nodes.py` della skill). Non si crea un vertice nuovo.
 
-* almeno **5 m prima del ciglio** (allargato), così il bankpoint non finisce sul bordo della sponda;
-* a non più di **15 m dalla mezzeria** del corridoio, così i due bankpoint distano al massimo 30 m e la sezione resta compatta.
+* Il vertice vicino della breakline incrociata si porta esattamente sul punto d'incrocio. La sezione continua a incrociare la breakline nello stesso punto, ma ora su un vertice esistente.
+* Le linee che condividono quel vertice (nodi, innesti a T) lo seguono, quindi nessun collegamento si perde.
+* Altri vertici vicini della stessa breakline si eliminano, se sono vertici interni non condivisi.
+* Anche un vertice a una frazione di millimetro dall'incrocio si porta sull'incrocio: altrimenti la mesh avrebbe un lato di quella lunghezza.
 
-Dove il letto è più largo di 30 m il piede si trova già oltre i 15 m dalla mezzeria, e il secondo limite non funziona. In quei tratti la ricerca arriva fino a **15 m dal piede di ciascuna sponda**, sempre restando a 5 m dal ciglio. Lo stesso limite si usa quando la mezzeria lascerebbe meno di 2 m di ricerca oltre il piede, come capita alle confluenze.
+Uno spostamento si accetta solo se:
+* il vertice non sta su una nodestring o su un'altra sezione;
+* non tocca una linea dei muri (`mat_id` 11), che sono bloccate;
+* non è l'estremità di un innesto a T;
+* le linee restano semplici e non nascono incroci nuovi;
+* nessun punto regione cade nell'area spazzata o si avvicina sotto 1 m;
+* non nasce un angolo sotto i 30°.
 
-Infine la ricerca si interrompe **0.5 m prima** di una nodestring, di una linea interna (per esempio un edificio di Borgo) o del piede di un altro letto, a qualunque distanza. Così, dove ci sono due canali affiancati, la sezione non scavalca l'isola. Se l'ostacolo coincide con il piede, come per alcuni edifici di Borgo, la sezione termina 0.5 m prima, dentro il letto.
-
-Se l'utente modifica a mano una sezione, il bankpoint segue il nuovo estremo: `tipo` e `regola` diventano `manuale` e la quota è quella della cella in cui cade. Anche il punto d'asse si aggiorna: è sempre l'intersezione della sezione con la linea d'asse del suo ramo, e da lì si ricalcolano `s_m`, `dist_next` e `dist_cp`. Una sezione può terminare esattamente su un muro o su una nodestring di edificio, come fanno a Borgo alcune sezioni sistemate a mano. I suoi vertici devono comunque avere z = m = 0.
-
-**La posizione.** Il bankpoint si mette a metà del tratto di sezione che attraversa la cella scelta. Se quella cella contiene l'incrocio con il ciglio, il punto va esattamente sull'incrocio.
-
-**Gli attributi.** Ogni punto porta il nome `<sezione>_sx` o `<sezione>_dx`, la progressiva `s_m`, la quota `z_dtm` (il valore della cella) e `dist_cp`, la distanza in pianta dal punto d'asse. Ci sono poi `tipo` (massimo locale o cella più alta), `regola` (quale limite di ricerca è stato applicato) e `prom` (la prominenza).
-
-## 9. La regola dei 5 m
-
-Dove una sezione incrocia una breakline nasce un nodo della mesh. Se a breve distanza c'è un vertice della breakline, tra i due nodi si formano elementi molto piccoli o molto allungati. Per questo **nessun vertice di breakline dovrebbe trovarsi tra 0 e 5 m da un incrocio** con una sezione.
-
-Il vertice dell'altro piede della stessa sezione non conta: in un letto largo meno di 5 m cade per forza entro 5 m, ed è un nodo della sezione, non della breakline.
-
-**Come si corregge.** Si sposta sempre la breakline, mai la nodestring, e il punto d'incrocio resta esattamente dov'è:
-
-1. ogni incrocio di una sezione o di una nodestring con una breakline diventa un vertice fisso della breakline. Lo stesso vale per ogni innesto a T, cioè una linea che termina sul tratto interno di un'altra: così togliere un vertice non può mai staccare una linea e fondere due regioni;
-2. i vertici intermedi entro 5 m dall'incrocio si tolgono;
-3. un nodo condiviso con altre linee si porta sull'incrocio, e le linee collegate lo seguono;
-4. un nodo che appartiene a un'altra linea (per esempio sul piede opposto) si fa scorrere lungo la sua linea fino a 5.05 m dall'incrocio;
-5. se una breakline trasversale (per esempio il limite di una sorgente) passa a pochi metri da una sezione, si porta sulla sezione. I suoi estremi scorrono lungo i piedi, e la striscia sottile tra le due linee sparisce.
-
-Ogni operazione si accetta solo se:
-
-* la rete di linee non si sposta di più di **2 m**;
-* non nascono incroci tra linee;
-* non si toccano vertici che stanno su una nodestring;
-* nessun punto regione si trova più vicino di 1 m a una linea, o più vicino di prima se lo era già.
-
-Le breakline che delimitano le regioni di muro (`mat_id` 11), compresi i tratti di piede su cui i muri poggiano, **non si toccano mai**: restano identiche all'originale.
-
-I casi che non rispettano questi limiti restano violazioni e si segnalano. Alcune sono accettate come eccezioni: l'elenco completo è al §14 bis. Dopo lo spostamento del ramo B del 18 novembre la B13100 non ha più violazioni e non è più un'eccezione. Si cerca comunque di ridurle già nella scelta della posizione delle sezioni (§7), penalizzando anche i piedi a meno di 5 m da un incrocio tra nodestring e breakline.
+Un vertice vicino che appartiene a **un'altra linea** non si può portare sull'incrocio, perché collegherebbe due linee: si segnala. I casi che non si possono correggere restano violazioni da decidere con l'utente (§14 bis). Il metodo precedente, che inserisce l'incrocio come vertice e toglie o fa scorrere i vertici attorno (`fix_near_nodes.py`), resta disponibile per i casi particolari.
 
 ## 10. I punti regione
 
-Le nuove sezioni dividono il letto in nuove facce, e ognuna deve ricevere il suo punto regione. Le regole sono:
+Breakline e nodestring, comprese le sezioni, dividono il piano in **facce** (il grafo planare). BASEmesh dà a ogni faccia il materiale e l'area massima degli elementi del **punto regione** che vi cade dentro. Quindi:
 
-* in ogni faccia del grafo finale c'è **un solo punto**;
-* se due regioni si fondono, si tiene il punto originale, se c'è, altrimenti quello con il fid più basso;
-* il punto tenuto deve stare **ad almeno 1 m** da ogni linea, altrimenti si sceglie un altro candidato;
-* un punto originale non si sostituisce mai, nemmeno nelle strisce strette (muri larghi meno di 2 m) dove nessun punto può stare a 1 m dalle linee;
-* i punti esistenti che si tengono non si spostano e non cambiano attributi;
-* una faccia nuova riceve un punto nel luogo più lontano dai suoi bordi, con gli attributi della regione d'alveo da cui deriva;
-* un punto esistente che finisce a meno di 1 m da una nuova sezione viene sostituito da un punto nuovo nella stessa regione (è successo al fid 41);
-* i difetti già presenti nei dati originali, cioè i punti con geometria nulla e la faccia con due punti, restano negli originali; in `regioni_ponti_50m` sono stati eliminati il 19 novembre (fid 65, 135 e 58).
+* una faccia **senza punto** resta senza materiale: i suoi elementi hanno materiale 0 nella mesh;
+* una faccia **con due punti** ha attributi ambigui.
+
+Ogni linea nuova o spostata può dividere una faccia in due. Il punto resta in una metà sola e l'altra rimane senza. Per esempio una sezione che va oltre il piede e taglia anche una sponda, un muro o un sottopasso divide anche quella faccia. Per questo dopo ogni modifica si riconta il grafo (`check_regions.py`, `verify3.py`).
+
+Le regole per assegnare i punti:
+* in ogni faccia c'è **un solo punto**;
+* se due facce si fondono, si tiene il punto originale, se c'è, altrimenti quello con il fid più basso;
+* il punto tenuto sta ad almeno 1 m da ogni linea, altrimenti si sceglie un altro candidato;
+* un punto originale non si sostituisce mai, nemmeno nelle strisce strette dei muri;
+* i punti tenuti non si spostano e non cambiano attributi;
+* una faccia nuova riceve un punto nel luogo più lontano dai bordi, con gli attributi della regione da cui deriva. Se quella regione è un buco (ponte, pilone, sottopasso), anche il punto nuovo è un buco;
+* i punti regione si cambiano solo nelle facce toccate dalla modifica in corso.
+
+Il controllo vale anche dopo aver arrotondato le coordinate delle linee a 1 mm e a 1 cm, come fa un generatore di mesh che fonde vertici vicini.
 
 ## 11. Scrittura dei file e ambiente
 
-I GeoPackage si scrivono con GDAL/OGR, mantenendo tipo di geometria, sistema di riferimento, campi e indice spaziale dell'originale. Se GDAL non fosse disponibile, si può scrivere con SQLite in un'unica transazione. In quel caso vanno aggiornati a mano l'intestazione binaria e l'envelope di ogni geometria, l'indice R-tree, l'estensione in `gpkg_contents` e il conteggio in `gpkg_ogr_contents`.
+I GeoPackage si scrivono con GDAL/OGR (`write3.py` della skill), mantenendo tipo di geometria, sistema di riferimento, campi e indice spaziale.
 
-Sul computer ci sono due ambienti Python:
-
-* quello di Anaconda (`python3`), con geopandas, shapely 2.1, numpy, scipy e networkx;
-* quello di sistema (`/usr/bin/python3`), con GDAL/OGR e PyQGIS ma senza shapely.
-
-Per questo gli script che leggono il DTM o scrivono i GeoPackage usano il secondo.
+Ci sono due ambienti Python:
+* quello di Anaconda (`~/anaconda3/bin/python3`), con geopandas, shapely 2.1, numpy e scipy;
+* quello di sistema (`/usr/bin/python3`), con GDAL/OGR e senza shapely, usato da chi legge il DTM o scrive i GeoPackage.
 
 ## 12. Le verifiche
 
-Dopo ogni modifica, sui file riletti dal disco, si controlla che:
+Dopo ogni modifica, sui file riletti dal disco:
 
-1. il numero di feature sia quello atteso;
-2. nomi e id siano univoci;
-3. tipo di geometria, sistema di riferimento e campi non siano cambiati;
-4. `PRAGMA integrity_check` dia ok, e l'indice R-tree contenga tante voci quante sono le geometrie non nulle;
-5. le feature non toccate siano identiche all'originale;
-6. il passo tra le sezioni rispetti i 50 ± 0.5 m lungo la linea d'asse, e la distanza in linea retta sia controllata;
-7. le sezioni siano perpendicolari, a due vertici, con il primo a sinistra e coincidenti con i bankpoint;
-8. nessuna sezione ne incroci un'altra o una nodestring, tranne la B00400, che coincide con `idrometro_Borgo`;
-9. ogni sezione attraversi le linee previste;
-10. ogni faccia abbia un solo punto, senza conflitti di attributi, anche dopo aver arrotondato le coordinate delle linee a 1 mm e a 1 cm (`check_regions.py`);
-11. `z_dtm` sia uguale al valore della cella, e ogni bankpoint stia ad almeno 5 m dal ciglio;
-12. i bankpoint, ricalcolati con codice indipendente, coincidano;
-13. dopo l'allargamento la larghezza, campionata ogni 0.5 m, rispetti il criterio;
-14. siano contate le violazioni della regola dei 5 m;
-15. l'impronta SHA-256 dei layer originali sia invariata.
-16. dopo ogni modifica a mano, tutti gli attributi di linee d'asse, punti d'asse, bankpoint e punti regione siano coerenti con le geometrie (`verify3.py`), e le quote dei bankpoint coincidano con il DTM (`verify3_dtm.py`).
+1. `verify3.py` controlla:
+   * conteggi, nomi e id;
+   * geometria e verso delle sezioni;
+   * linee d'asse, centerpoint e bankpoint;
+   * passo e regola dei nodi vicini rispetto alle eccezioni;
+   * incroci;
+   * punti regione;
+   * integrità dei GeoPackage;
+   * angoli.
+2. `verify3_dtm.py`: `z_dtm` è uguale al valore della cella.
+3. `check_regions.py`: un punto per faccia, anche con le coordinate arrotondate a 1 mm e 1 cm.
+4. `sync_cp_bp.py`: dopo un riallineamento deve dare 0 cambiamenti.
+5. `check_angles.py`: nessun angolo nuovo sotto i 30° tra linee.
+6. `check_mesh.py`: sulla mesh rigenerata controlla data, lati più corti, elementi con materiale 0 e nodestring.
+7. A fine lavoro: l'impronta SHA-256 dei layer originali è invariata.
 
 ## 13. Difetti noti nei dati originali
 
-Sono già presenti nei dati di partenza e si lasciano come sono:
+* **`breaklines.gpkg`:** 14 righe hanno geometria vuota o nulla.
+* **`regioni_ponti.gpkg`:** i fid 65 e 135 hanno geometria nulla, e i fid 57 e 58 cadono nella stessa faccia.
 
-* in `breaklines.gpkg`, 14 righe hanno geometria vuota o nulla;
-* in `regioni_ponti.gpkg`, i fid 65 e 135 hanno geometria nulla, e i fid 57 e 58 cadono nella stessa faccia. In `regioni_ponti_50m` questi difetti non ci sono più: il 19 novembre sono stati eliminati i fid 65, 135 e 58.
+Restano negli originali; in `regioni_ponti_50m` i fid 65, 135 e 58 non ci sono.
 
-## 14. Cosa resta da fare (al 18 novembre 2026, pomeriggio; aggiornato il 19 novembre)
+## 14. Cosa resta da fare
 
-1. **Violazioni del passo e della regola dei 5 m:** al 19 novembre tutte le violazioni rimaste sono eccezioni accettate dall'utente (§14 bis), comprese le coppie N01950–N02000 e B00150–B00200, oltre i 50.5 m di pochi millimetri.
-2. **Mesh e modello.** La mesh va rigenerata da `breaklines_50m`, `boundary_50m` e `regioni_ponti_50m`, e `STRINGDEF` va aggiornato con le 735 sezioni dai nuovi nomi. La B00400 e `idrometro_Borgo` sono coincidenti; va verificato come le trattano BASEmesh e BASEMENT. Il 19 novembre l'utente ha generato la mesh definitiva (`mesh/10_quality-mesh.2dm` e `mesh/10_computational-mesh.2dm`) dopo aver modificato a mano 8 sezioni; resta da aggiornare `STRINGDEF`.
-3. **Controllo della mesh.** Dopo la generazione va verificata la qualità degli elementi vicino ai bankpoint, alle violazioni dei 5 m, ai cigli allargati e alle strisce di muro, e che i materiali corrispondano alle regioni. Il 19 novembre si è visto che la B12600 incrociava le breakline 1316 e 1317 a 1.5 mm e 0.2 mm da un loro vertice, e che la mesh aveva lì lati di 0.2 mm. L'utente ha corretto le breakline: la B12600 non ha più violazioni, e la mesh va controllata di nuovo dopo la rigenerazione.
+1. **Mesh e modello:**
+   * rigenerare la mesh e controllarla con `check_mesh.py`;
+   * aggiornare `STRINGDEF` con i 738 nomi attuali;
+   * verificare come BASEmesh e BASEMENT trattano la B16550, che coincide con `idrometro_Borgo`.
+2. **B16450:** il suo estremo destro va 1.3 m oltre il muro 893 (è così fin dall'inizio); la nodestring `edificio_paratoie_borgo` parte dal punto in cui la sezione incontra il muro. Da decidere se accorciare la sezione al muro.
+3. **Breakline che non coincidono più con una sezione:** la 1225 e la striscia della sorgente 987/988.
 
-Su indicazione dell'utente non si seguono più questi punti:
-* l'allargamento incompleto sul Brenta vecchio urbano;
-* i due bankpoint non confermati dal ricalcolo indipendente (ex S09338 sx e S30831 dx).
+Tutte le altre violazioni delle regole sono eccezioni accettate (§14 bis). Restano segnalati dalle verifiche, senza essere violazioni:
+* la V00000 mantiene il fid 22, fuori dal blocco delle sezioni;
+* il punto originale 30 `sottopasso-borgo` ha attributi diversi dall'originale (materiale 1, nessun `buco`), per scelta dell'utente;
+* il punto nuovo 1016 (`bed`) sta a 0.52 m da una linea, in una faccia stretta.
+
+Le nodestring `link_borgo_monte`, `link_borgo_valle`, `check_portata_1` e `check_portata_2` sono state tolte dall'utente; le nodestring sono 48. I punti `sottopasso-borgo` (30 e 1054) hanno materiale 1 e nessun `buco`: il sottopasso non c'è più e l'acqua passa in superficie. Il pilone 61 è di nuovo un buco. Togliendo `check_portata_1` e `check_portata_2` si sono fuse delle facce e sono rimasti punti doppi con gli stessi attributi: si è tenuto quello con il fid più basso (tolti gli originali 66, 67, 73, 74, 75, 76, 77, 78, 87, 88, 91, 92 e i derivati 997, 1003).
 
 ## 14 bis. Eccezioni
 
-Le eccezioni accettate dall'utente sono divise in due categorie. L'elenco comprende tutte e sole queste sezioni.
+Accettate dall'utente il 24 novembre 2026, dopo le ultime modifiche a mano. Sono registrate, con il motivo, in `exceptions` di [rcs_config_brenta_vb.json](rcs_config_brenta_vb.json), e le verifiche le confrontano con le violazioni trovate.
 
-**Regola dei 5 m**
+**Sezione con più di due vertici:** B16100 (3 vertici, disegnata così dall'utente).
 
-| Sezioni | Motivo |
+**Regola dei nodi vicini (raggio 2 m):**
+
+| Sezione | Motivo |
 |---|---|
-| N16000 | I suoi incroci con i piedi stanno a 3.13 e 3.06 m da quelli della nodestring `check_portata_Brenta_nuovo`, che non si sposta. |
-| B00000, B00100, B00150, B00200, B00300, B00400, B00450, B00500 | Zona dei muri di Borgo: il vertice entro 5 m appartiene a una linea dei muri (`mat_id` 11), che è bloccata. Le distanze sono 2.34; 2.34 e 1.05; 2.47; 2.18; 3.21, 0.87 e 0.87; 3.57; 1.26 e 2.89; 1.42 m (accettate il 18 novembre; B00000 e B00450 aggiornate il 19 novembre dopo la modifica a mano). |
-| N02150 | Il nodo comune alle breakline 210 e 1232 sta a 1.00 m dall'incrocio della sezione con la 1232 (accettata il 19 novembre, mesh definitiva). |
-| N15150 | Il nodo comune alle breakline 866 e 1151, modificate a mano dall'utente, sta a 3.86 m dall'incrocio della sezione (accettata il 19 novembre). |
+| B15950, B16250, B16450 (2 incroci), B16600, B16650 | vertice vicino su una linea bloccata dei muri di Borgo (da 0.87 a 1.42 m; alla B16250 è condiviso con il muro nuovo 1463) |
+| B06800 | vertici 562 e 565 (0.66 e 0.51 m) su un'altra nodestring o sezione |
+| B08900 | vertici 649 e 650 (1.05 e 0.89 m): spostarli porterebbe via un punto regione o creerebbe un angolo di 7.3° |
 
-**Passo tra sezioni consecutive** (50 ± 0.5 m)
+**Passo (50 ± 0.5 m, lungo la linea d'asse o in linea retta):**
 
-| Sezioni | Motivo |
+| Coppia | Motivo |
 |---|---|
-| N01900–N01950 | Curva stretta: 50.5 m lungo la linea d'asse, 46.68 m in linea retta. |
-| B11200–B11250 | Curva stretta attorno alla progressiva 27 470 m dell'asta: 50.5 m lungo la linea d'asse, 47.85 m in linea retta. |
-| B00250–B00300–B00350 | B00300 spostata a mano dall'utente nella zona dei muri di Borgo: 47.14 e 53.61 m lungo la linea d'asse, 47.03 e 53.16 m in linea retta. |
-| V01050–V01100 | V01050 modificata a mano per la mesh definitiva: 50.517 m lungo la linea d'asse (accettata il 19 novembre). |
-| B00450–B00500 | B00450 modificata a mano per la mesh definitiva: 50.502 m lungo la linea d'asse (accettata il 19 novembre). |
-| B00900–B00950 | B00950 modificata a mano per la mesh definitiva: 50.509 m lungo la linea d'asse e in linea retta (accettata il 19 novembre). |
-| N01950–N02000 | 50.505 m lungo la linea d'asse, pochi millimetri oltre il limite: N01950 è stata modificata a mano prima del 17 novembre (accettata il 19 novembre). |
-| B00150–B00200 | 50.504 m lungo la linea d'asse, pochi millimetri oltre il limite, per le sezioni sistemate a mano a Borgo (accettata il 19 novembre). |
+| V00000–V00050 | 52.36 m: la V00000 è la nodestring della divergenza, fissa |
+| V01050–V01100 | 50.517 m: V01050 modificata a mano |
+| B01150–B01200 | 50.52 m: B01150 modificata a mano |
+| B01900–B01950 | curva stretta, 48.13 m in linea retta; B01900 modificata a mano |
+| B02000–B02050 | 50.502 m: B02000 modificata a mano |
+| B02100–B02150 | curva stretta dopo l'unione dei rami, 47.32 m in linea retta |
+| B02250–B02300 | curva di quasi 90° dopo l'unione dei rami, 42.47 m in linea retta |
+| B15900–B15950, B15950–B16000 | 50.52 e 50.50 m: sezioni modificate a mano |
+| B16050–B16100 | 49.13 m in linea retta: sezioni di Borgo modificate a mano |
+| B16300–B16350 | 50.504 m, tra i muri di Borgo |
+| B16400–B16450, B16450–B16500 | 47.1 e 53.6 m: B16450 posata a mano tra i muri di Borgo |
+| B16600–B16650 | 50.502 m: B16600 modificata a mano |
+| B17050–B17100 | 50.509 m: B17100 modificata a mano |
+| B27350–B27400 | curva stretta, 47.85 m in linea retta |
+
+**Angoli sotto i 30°:** breakline 853 e 1126 a Borgo (17.3°); breakline 1367 con la B17900 (27.5°).
+
+Le eccezioni accettate prima dell'unione dei rami (nomi vecchi: `Nxxxxx` → `B(xxxxx − 50)`, `Bxxxxx` → `B(xxxxx + 16150)`) sono superate da questo elenco.
 
 ## 15. Come si è arrivati a questo metodo
 
-| Data | Passo | Stato |
-|---|---|---|
-| 28 ottobre 2026 | Sezioni ogni 200 m estese a tutta la valle | superato |
-| 2 novembre 2026 | Sezioni divise in parte d'alveo e parti laterali | superato |
-| 5 novembre 2026 | Bankpoint, sezioni a due vertici, corridoio di 40 m, regola dei 5 m | valido |
-| 9 novembre 2026 | Sezioni ogni 50 m su un tratto di prova di 6 km | valido |
-| 9 novembre 2026 | Metodo esteso ai 34 km dell'asta e al Brenta vecchio | valido |
-| 17 novembre 2026 | Tre rami N, V, B con nomi nominali; correzione della regola dei 5 m sulle breakline | valido |
-| 18 novembre 2026 | Ramo B spostato di 16.6 m verso monte, B00400 coincidente con `idrometro_Borgo` | stato attuale, vedi `workflow.md` |
+| Data | Passo |
+|---|---|
+| 28 ottobre 2026 | Sezioni ogni 200 m estese a tutta la valle (superato) |
+| 2 novembre 2026 | Sezioni divise in parte d'alveo e parti laterali (superato) |
+| 5 novembre 2026 | Bankpoint, sezioni a due vertici, corridoio di 40 m, regola dei nodi vicini a 5 m |
+| 9 novembre 2026 | Sezioni ogni 50 m, prima su 6 km, poi sui 34 km dell'asta e sul Brenta vecchio |
+| 17 novembre 2026 | Tre rami N, V, B; correzione delle breakline per la regola dei nodi vicini |
+| 18 novembre 2026 | Ramo B spostato di 16.6 m, sezione coincidente con `idrometro_Borgo` |
+| 24 novembre 2026 | Due rami V e B: le N spostate di 27.23 m e unite a B, due sezioni nuove, V00000 dalla nodestring della divergenza; regola dei nodi vicini a 2 m, con il vertice vicino spostato sull'incrocio |

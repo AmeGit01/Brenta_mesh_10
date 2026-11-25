@@ -188,6 +188,7 @@
     "near_node": [],
     "locked_line": [],
     "spacing": [],
+    "vertices": [],
     "angle": []
   },
   "params": {

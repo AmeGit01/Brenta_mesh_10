@@ -163,3 +163,50 @@ L'utente ha modificato a mano 8 sezioni (V01050, V02950, B00000, B00250, B00450,
 | 6 | `dx_dev.py`, `dx_dev_fig.py` | analisi del passo e figure, con le nuove eccezioni | `docs/Brenta_dx_dev_50m.csv`, `docs/figures/fig0*.png` | [dx_dev.md](dx_dev.md), [dx_dev_fig.md](dx_dev_fig.md) |
 
 Backup: `*_backup_20261119c.gpkg` (centerline, centerpoints, bankpoints, prima del passo 2).
+
+## Settimo passo (24 novembre 2026): da tre a due rami (V e B)
+
+Le vecchie N sono spostate di 27.23 m verso monte e unite a B, con due sezioni nuove; la nodestring `divergenza_valle_brenta_vecchio` diventa la V00000. Gli script di calcolo, scrittura e verifica sono quelli della skill `skills/river-cross-sections/` (schede in inglese in `skills/river-cross-sections/docs/scripts/`); la configurazione è `docs/rcs_config_brenta_vb.json`.
+
+| # | Script | Cosa fa | Produce | Scheda |
+|---|---|---|---|---|
+| 1 | `merge_vb.py prep` | stazioni nuove del ramo B e stazioni N attuali (verifica) | `WD/work/sec_in.json`, `check_in.json` | [merge_vb.md](merge_vb.md) |
+| 2 | skill: `next_bed.py`, `obst.py`, `bank.py` (sistema) | bankpoint sul DTM | `WD/work/bank_out.json` | skill |
+| 3 | `merge_vb.py assemble` | sezioni V e B, linee d'asse, centerpoint, bankpoint, rinomina | `WD/work/merge_payload.json` | [merge_vb.md](merge_vb.md) |
+| 4 | skill: `regions2.py`, poi `merge_vb.py regions` | un punto regione per faccia (solo i cambi dovuti alle sezioni) | payload completo | |
+| 5 | skill: `write3.py` (sistema) | backup `20261124a` e scrittura | `layers/*_50m.gpkg` | skill |
+| 6 | skill: `verify3.py`, `verify3_dtm.py`, `check_regions.py`, `sync_cp_bp.py`, `sections_csv.py` | controlli e tabella delle sezioni | stampa, `docs/Brenta_sections_50m_mesh10.csv` | skill |
+
+Gli script del progetto con i rami N/V/B scritti nel codice (`verify3.py`, `sync_cp_bp.py`, `sections_csv.py`, `dx_dev.py` e altri) non valgono più per lo stato attuale: usare quelli della skill con `docs/rcs_config_brenta_vb.json`.
+
+## Ottavo passo (24 novembre 2026): sezioni modificate a mano e regola dei nodi vicini a 2 m
+
+Tutto con gli script della skill e `docs/rcs_config_brenta_vb.json` (raggio dei nodi vicini 2 m).
+
+| # | Script | Cosa fa | Produce |
+|---|---|---|---|
+| 1 | `write3.py` (payload con le linee d'asse) | linea d'asse V prolungata fino alla confluenza (prima era tagliata alla V03000) | backup `20261124c` |
+| 2 | `sync_cp_bp.py`, `write3.py` | bankpoint e centerpoint delle sezioni modificate a mano | backup `20261124d` |
+| 3 | `snap_near_nodes.py`, `write3.py` | regola dei nodi vicini: il vertice vicino si sposta sull'incrocio | backup `20261124e`, `20261124f` |
+| 4 | `verify3.py`, `verify3_dtm.py`, `check_regions.py`, `check_angles.py`, `fix_manual.py` (solo come controllo) | verifiche | stampa |
+
+## Nono passo (24 novembre 2026, pomeriggio): punti regione, muri nuovi e analisi del passo sui due rami
+
+Script della skill con `docs/rcs_config_brenta_vb.json`, poi gli script di analisi del progetto.
+
+| # | Script | Cosa fa | Produce |
+|---|---|---|---|
+| 1 | `sync_cp_bp.py`, `fix_manual.py` (proposte dei punti), `write3.py` | bankpoint della B16250; 8 punti regione nelle facce senza punto (2 nei muri nuovi) | backup `20261124g` |
+| 2 | `locked_lines.py --derived` | linee dei muri bloccate, con i muri nuovi 1462 e 1463 | file di lavoro della skill |
+| 3 | `write3.py` (chiavi `bd` e `reg_attr`, nuova) | nodestring `edificio_paratoie_borgo` accorciata alla B16450; `buco` dei punti 30, 1054 e 61 | backup `20261124h` |
+| 4 | `verify3.py`, `verify3_dtm.py`, `check_regions.py`, `snap_near_nodes.py` (solo come controllo) | verifiche | stampa |
+| 5 | `sections_csv.py` | tabella delle sezioni | `docs/Brenta_sections_50m_mesh10.csv` |
+| 6 | `dx_dev.py`, `dx_dev_fig.py` (rami ed eccezioni dalla configurazione) | analisi del passo sui rami V e B | `docs/Brenta_dx_dev_50m.csv`, `docs/figures/fig0*.png` ([dx_dev.md](dx_dev.md), [dx_dev_fig.md](dx_dev_fig.md)) |
+
+## Decimo passo (24 novembre 2026, notte): ultime modifiche a mano ed eccezioni
+
+| # | Script | Cosa fa | Produce |
+|---|---|---|---|
+| 1 | `fix_manual.py`, `sync_cp_bp.py`, `write3.py` (con `reg_drop`) | vertici a pochi mm sugli incroci, bankpoint e centerpoint di B00150, B01150, B01900, B02000, punti doppi dopo la rimozione di `check_portata_1/2` | backup `20261124i` |
+| 2 | `verify3.py`, `verify3_dtm.py`, `check_regions.py` | verifiche con tutte le eccezioni registrate in `docs/rcs_config_brenta_vb.json` | stampa |
+| 3 | `sections_csv.py`, `dx_dev.py`, `dx_dev_fig.py` | tabella delle sezioni e analisi del passo con le eccezioni | `docs/Brenta_sections_50m_mesh10.csv`, `docs/Brenta_dx_dev_50m.csv`, `docs/figures/fig0*.png` |

@@ -2,8 +2,8 @@
 # Purpose: figures for the step analysis of docs/Brenta_analisi_passo_50m.md.
 #   fig01_schema_dx.png        sketch: what dx_c, dx_avg, dx_min, dx_max are (analysis 1) and how dx_dev_abs is built (analysis 2);
 #                              synthetic geometry, distances computed with the same sampling as dx_dev.py
-#   fig02_dx_avg_rami.png      dx_avg of every pair along the three reaches (nominal chainage from the section name), mean line
-#   fig03_diff_avg_c_rami.png  dx_avg - dx_c along the three reaches
+#   fig02_dx_avg_rami.png      dx_avg of every pair along the reaches (nominal chainage from the section name), mean line
+#   fig03_diff_avg_c_rami.png  dx_avg - dx_c along the reaches
 #   fig04_diff_avg_c_angolo.png dx_avg - dx_c against the angle between the two sections
 #   fig05_dx_dev_istogramma.png histogram of dx_dev (analysis 1) per reach
 #   fig06_dx_dev_geometria.png dx_dev against width*tan(angle)/dx_avg (geometric predictor)
@@ -11,7 +11,8 @@
 #   fig08_sensibilita.png      dx_dev_abs of the whole model after removing the k shortest pairs, k = 0..20
 # Inputs : argv[1] = pair CSV written by dx_dev.py (docs/Brenta_dx_dev_50m.csv); argv[2] = output folder (docs/figures).
 # Output : the PNG files above (150 dpi). Exception pairs (column eccezione = 1) are drawn as hollow grey markers.
-# Run    : python3 scripts/dx_dev_fig.py docs/Brenta_dx_dev_50m.csv docs/figures      (Anaconda python3)
+# Reaches: taken from the column ramo of the CSV, in order of appearance (2026-11-24: V and B; before, N, V and B).
+# Run    : ~/anaconda3/bin/python3 scripts/dx_dev_fig.py docs/Brenta_dx_dev_50m.csv docs/figures      (Anaconda python3)
 import sys, os, numpy as np, pandas as pd, matplotlib
 matplotlib.use('Agg'); import matplotlib.pyplot as plt
 from shapely.geometry import LineString, Point
@@ -19,14 +20,16 @@ from shapely.ops import nearest_points
 CSV, OUT = sys.argv[1], sys.argv[2]; os.makedirs(OUT, exist_ok=True)
 NS = 201                                                   # samples per section, as in dx_dev.py
 # palette (reference categorical slots 1-3, validated all-pairs) and neutral inks
-COL = {'N': '#2a78d6', 'V': '#eb6834', 'B': '#1baf7a'}; NAME = {'N': 'ramo N', 'V': 'ramo V', 'B': 'ramo B'}
+PAL = ['#2a78d6', '#eb6834', '#1baf7a', '#6250d6']
 INK, INK2, MUTED, GRID, EXC = '#0b0b0b', '#52514e', '#8a8984', '#e4e3df', '#7a7975'
 plt.rcParams.update({'font.size': 9, 'axes.edgecolor': MUTED, 'axes.labelcolor': INK2, 'xtick.color': INK2, 'ytick.color': INK2,
                      'axes.spines.top': False, 'axes.spines.right': False, 'axes.grid': True, 'grid.color': GRID, 'grid.linewidth': 0.6,
                      'axes.axisbelow': True, 'figure.facecolor': 'white', 'axes.facecolor': 'white', 'legend.frameon': False,
                      'axes.titlesize': 10, 'axes.titlecolor': INK, 'axes.titlelocation': 'left'})
 df = pd.read_csv(CSV)
-df['km'] = (df.sez_monte.str[1:].astype(int) + df.sez_valle.str[1:].astype(int)) / 2 / 1000   # nominal chainage of the pair midpoint
+CODES = list(dict.fromkeys(df.ramo)); COL = dict(zip(CODES, PAL)); NAME = {R: 'ramo ' + R for R in CODES}
+num = lambda c: c.str.extract(r'(\d+)$')[0].astype(int)
+df['km'] = (num(df.sez_monte) + num(df.sez_valle)) / 2 / 1000   # nominal chainage of the pair midpoint
 df['pred'] = df.larg_m * np.tan(np.radians(df.ang_gradi)) / df.dx_avg
 df['coppia'] = df.sez_monte + '–' + df.sez_valle
 exc = df.eccezione == 1
@@ -99,8 +102,8 @@ save(fig, 'fig01_schema_dx.png')
 
 # ---------------------------------------------------------------- helpers for the along-reach small multiples
 def along(col, ylabel, name, ref=None, label_n=4, fmt='{:+.1f}'):
-    fig, axs = plt.subplots(3, 1, figsize=(10, 6.6), sharey=True, gridspec_kw=dict(hspace=0.45))
-    for ax, R in zip(axs, 'NVB'):
+    fig, axs = plt.subplots(len(CODES), 1, figsize=(10, 2.2 * len(CODES)), sharey=True, gridspec_kw=dict(hspace=0.45), squeeze=False); axs = axs[:, 0]
+    for ax, R in zip(axs, CODES):
         d = df[df.ramo == R]; e = d.eccezione == 1
         ax.plot(d.km[~e], d[col][~e], 'o', ms=3.2, color=COL[R], mec='none', alpha=0.9)
         ax.plot(d.km[e], d[col][e], 'o', ms=4.5, mfc='white', mec=EXC, mew=1.1)
@@ -113,7 +116,7 @@ def along(col, ylabel, name, ref=None, label_n=4, fmt='{:+.1f}'):
             ax.annotate(f"{r.coppia}  {fmt.format(r[col])}", (r.km, r[col]), xytext=(7, dy), textcoords='offset points', fontsize=7,
                         color=INK2, va='center', arrowprops=dict(arrowstyle='-', color=MUTED, lw=0.5) if dy else None)
         ax.set_title(NAME[R] + f'  ({len(d)} coppie)'); ax.set_xlim(-0.2, d.km.max() + 0.6)
-    axs[-1].set_xlabel('progressiva nominale della coppia (km, dal nome delle sezioni)'); axs[1].set_ylabel(ylabel)
+    axs[-1].set_xlabel('progressiva nominale della coppia (km, dal nome delle sezioni)'); axs[len(axs) // 2].set_ylabel(ylabel)
     axs[0].plot([], [], 'o', mfc='white', mec=EXC, label='coppia con una sezione in eccezione'); axs[0].legend(loc='lower right', fontsize=7.5)
     save(fig, name)
 along('dx_avg', 'dx_avg (m)', 'fig02_dx_avg_rami.png', ref='mean', fmt='{:.2f} m')
@@ -121,7 +124,7 @@ along('diff_avg_c', 'dx_avg − dx_c (m)', 'fig03_diff_avg_c_rami.png', ref=0, f
 
 # ---------------------------------------------------------------- fig04: dx_avg - dx_c against the angle
 fig, ax = plt.subplots(figsize=(7.5, 4.2))
-for R in 'NVB':
+for R in CODES:
     d = df[(df.ramo == R) & ~exc]; ax.plot(d.ang_gradi, d.diff_avg_c, 'o', ms=3.5, color=COL[R], mec='none', alpha=0.85, label=NAME[R])
 ax.plot(df.ang_gradi[exc], df.diff_avg_c[exc], 'o', ms=5, mfc='white', mec=EXC, mew=1.1, label='eccezione')
 for _, r in df.nsmallest(5, 'diff_avg_c').iterrows(): ax.annotate(r.coppia, (r.ang_gradi, r.diff_avg_c), xytext=(5, 0), textcoords='offset points', fontsize=7, color=INK2, va='center')
@@ -129,18 +132,18 @@ ax.axhline(0, color=INK2, lw=0.9); ax.set_xlabel('angolo tra le due sezioni (°)
 save(fig, 'fig04_diff_avg_c_angolo.png')
 
 # ---------------------------------------------------------------- fig05: histogram of dx_dev per reach
-fig, axs = plt.subplots(1, 3, figsize=(10, 3.2), sharey=False, gridspec_kw=dict(wspace=0.25)); bins = np.arange(0, 0.26, 0.01)
-for ax, R in zip(axs, 'NVB'):
+fig, axs = plt.subplots(1, len(CODES), figsize=(3.4 * len(CODES), 3.2), sharey=False, gridspec_kw=dict(wspace=0.25), squeeze=False); axs = axs[0]; bins = np.arange(0, 0.26, 0.01)
+for ax, R in zip(axs, CODES):
     d = df[df.ramo == R]
     ax.hist([d.dx_dev[d.eccezione == 0], d.dx_dev[d.eccezione == 1]], bins=bins, stacked=True, color=[COL[R], '#d6d5d0'], edgecolor='white', linewidth=0.8)
     md = d.dx_dev.median(); ax.axvline(md, color=INK2, lw=0.9, ls=(0, (4, 2))); ax.text(0.97, 0.95, f'mediana (tratteggio) {md:.3f}', transform=ax.transAxes, ha='right', va='top', fontsize=7.5, color=INK2)
     ax.set_title(NAME[R] + f'  ({len(d)} coppie)'); ax.set_xlabel('dx_dev'); ax.set_xlim(0, 0.26)
-axs[0].set_ylabel('numero di coppie'); axs[2].bar([0], [0], color='#d6d5d0', label='eccezioni'); axs[2].legend(fontsize=7.5, loc='center right')
+axs[0].set_ylabel('numero di coppie'); axs[-1].bar([0], [0], color='#d6d5d0', label='eccezioni'); axs[-1].legend(fontsize=7.5, loc='center right')
 save(fig, 'fig05_dx_dev_istogramma.png')
 
 # ---------------------------------------------------------------- fig06: dx_dev against the geometric predictor
 fig, ax = plt.subplots(figsize=(7.5, 4.2))
-for R in 'NVB':
+for R in CODES:
     d = df[(df.ramo == R) & ~exc]; ax.plot(d.pred, d.dx_dev, 'o', ms=3.5, color=COL[R], mec='none', alpha=0.85, label=NAME[R])
 ax.plot(df.pred[exc], df.dx_dev[exc], 'o', ms=5, mfc='white', mec=EXC, mew=1.1, label='eccezione')
 for _, r in df.nlargest(4, 'dx_dev').iterrows(): ax.annotate(r.coppia, (r.pred, r.dx_dev), xytext=(5, 0), textcoords='offset points', fontsize=7, color=INK2, va='center')

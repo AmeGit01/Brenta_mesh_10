@@ -8,10 +8,15 @@
 #             "bd"       {fid: [[x,y],...]}   new geometry of boundary features (name/id unchanged)
 #             "secs"     [{"name","coords"}]  replace ALL section features of the boundary layer: features whose name matches
 #                                             sections.name_pattern are deleted, the new ones are inserted in the given order with
-#                                             fid = sections.first_fid + k and id = sections.first_id + k
+#                                             fid = sections.first_fid + k and id = sections.first_id + k. Only features with
+#                                             fid >= sections.first_fid are replaced: a nodestring below that fid keeps its place
+#                                             even if its name matches the pattern (e.g. a nodestring renamed as a section)
+#             "rename"   {fid: name}          new name of boundary features (applied after "secs"; names must stay unique)
 #             "reg_drop" [fid,...]            region points to delete
 #             "reg_new"  [{"x","y","name","mat_id","max_area","hole"}]   new region points (fid = previous maximum + 1, ...;
 #                                             "hole" written only when not null)
+#             "reg_attr" {fid: {logical: value}}   new attribute values of existing region points (name, mat_id, max_area,
+#                                             hole); null clears the field. Fid and geometry unchanged. Applied before the drops
 #             "cl" [{"name","reach","coords","s0"}], "cp" [{"name","reach","s","x","y","dist_next"}],
 #             "bp" [{"name","section","s","x","y","z","dist_cp","kind","rule","prom"}]
 #                                             REBUILD centerline, centerpoints, bankpoints (all three together; z null = read the DTM cell)
@@ -35,7 +40,7 @@ args = ap.parse_args(); cfg = common.load(args)
 D = json.load(open(args.payload)); TAG = args.tag
 sha = lambda p: hashlib.sha256(open(p, 'rb').read()).hexdigest()
 F = cfg.f
-KNOWN = {'bl', 'bd', 'secs', 'reg_drop', 'reg_new', 'cl', 'cp', 'bp'}
+KNOWN = {'bl', 'bd', 'secs', 'rename', 'reg_attr', 'reg_drop', 'reg_new', 'cl', 'cp', 'bp'}
 if set(D) - KNOWN: raise SystemExit(f'unknown payload keys: {sorted(set(D) - KNOWN)}')
 REBUILD = [k for k in ('cl', 'cp', 'bp') if k in D]
 if REBUILD and len(REBUILD) != 3: raise SystemExit('cl, cp and bp must be given together (the three layers are rebuilt together)')
@@ -43,8 +48,8 @@ if REBUILD and len(REBUILD) != 3: raise SystemExit('cl, cp and bp must be given 
 # layer keys touched by this payload, in a fixed order
 KEYS = []
 if D.get('bl'): KEYS.append('breaklines')
-if D.get('bd') or 'secs' in D: KEYS.append('boundary')
-if D.get('reg_drop') or D.get('reg_new'): KEYS.append('regions')
+if D.get('bd') or 'secs' in D or D.get('rename'): KEYS.append('boundary')
+if D.get('reg_drop') or D.get('reg_new') or D.get('reg_attr'): KEYS.append('regions')
 if REBUILD: KEYS += ['centerline', 'centerpoints', 'bankpoints']
 if not KEYS: raise SystemExit('empty payload: nothing to write')
 lp = lambda k: cfg.layer('out', k)
@@ -86,7 +91,7 @@ for key, k in (('bl', 'breaklines'), ('bd', 'boundary')):
 if 'secs' in D:
     S = cfg['sections']; fid_id, fid_nm = F('boundary', 'id'), F('boundary', 'name')
     ds = ogr.Open(lp('boundary'), 1); lyr = ds.GetLayer(0); defn = lyr.GetLayerDefn(); ds.StartTransaction()
-    old = [f.GetFID() for f in lyr if cfg.is_section(f.GetField(fid_nm))]
+    old = [f.GetFID() for f in lyr if cfg.is_section(f.GetField(fid_nm)) and f.GetFID() >= S['first_fid']]
     keep = {f.GetFID() for f in lyr} - set(old); lyr.ResetReading()
     new_fids = [S['first_fid'] + i for i in range(len(D['secs']))]
     if keep & set(new_fids): ds.RollbackTransaction(); raise SystemExit(f'fid collision with non-section features: {sorted(keep & set(new_fids))[:5]}')
@@ -97,10 +102,35 @@ if 'secs' in D:
         f.SetGeometry(mls(s['coords'])); lyr.CreateFeature(f)
     ds.CommitTransaction(); ds = None; print('boundary: sections removed', len(old), 'added', len(D['secs']))
 
+# ---- boundary: rename features (after the sections, so a renamed nodestring is not taken for a section to replace)
+if D.get('rename'):
+    fid_nm = F('boundary', 'name')
+    ds = ogr.Open(lp('boundary'), 1); lyr = ds.GetLayer(0); ds.StartTransaction()
+    names = {f.GetFID(): f.GetField(fid_nm) for f in lyr}; lyr.ResetReading()
+    for fid, nm in D['rename'].items():
+        names[int(fid)] = nm
+    dup = [n for n in set(names.values()) if list(names.values()).count(n) > 1]
+    if dup: ds.RollbackTransaction(); raise SystemExit(f'rename would create duplicate names: {dup[:5]}')
+    for fid, nm in D['rename'].items():
+        f = lyr.GetFeature(int(fid))
+        if f is None: ds.RollbackTransaction(); raise SystemExit(f'boundary: fid {fid} not found')
+        print('  rename', fid, f.GetField(fid_nm), '->', nm); f.SetField(fid_nm, nm); lyr.SetFeature(f)
+    ds.CommitTransaction(); ds = None; print('boundary: features renamed', len(D['rename']))
+
 # ---- region points: drop, then add (fid after the maximum that existed before the drops)
-if D.get('reg_drop') or D.get('reg_new'):
+if D.get('reg_drop') or D.get('reg_new') or D.get('reg_attr'):
     ds = ogr.Open(lp('regions'), 1); lyr = ds.GetLayer(0); defn = lyr.GetLayerDefn()
     fid0 = max(f.GetFID() for f in lyr) + 1; lyr.ResetReading(); ds.StartTransaction()
+    for fid, attrs in D.get('reg_attr', {}).items():
+        f = lyr.GetFeature(int(fid))
+        if f is None: ds.RollbackTransaction(); raise SystemExit(f'regions: fid {fid} not found')
+        for lg, v in attrs.items():
+            if lg not in ('name', 'mat_id', 'max_area', 'hole'): ds.RollbackTransaction(); raise SystemExit(f'regions: unknown field {lg}')
+            fn = F('regions', lg); old = f.GetField(fn)
+            if v is None: f.SetFieldNull(fn)
+            else: f.SetField(fn, v)
+            print('  region', fid, fn, old, '->', v)
+        lyr.SetFeature(f)
     for fid in D.get('reg_drop', []):
         if lyr.GetFeature(int(fid)) is None: ds.RollbackTransaction(); raise SystemExit(f'regions: fid {fid} not found')
         lyr.DeleteFeature(int(fid))
@@ -110,7 +140,7 @@ if D.get('reg_drop') or D.get('reg_new'):
         set_opt(f, F('regions', 'hole'), p.get('hole'))
         g = ogr.Geometry(ogr.wkbPoint); g.AddPoint_2D(p['x'], p['y']); f.SetGeometry(g); lyr.CreateFeature(f)
     ds.CommitTransaction(); ds = None
-    print('region points dropped', len(D.get('reg_drop', [])), 'added', len(D.get('reg_new', [])), ('fid from %d' % fid0) if D.get('reg_new') else '')
+    print('region points changed', len(D.get('reg_attr', {})), 'dropped', len(D.get('reg_drop', [])), 'added', len(D.get('reg_new', [])), ('fid from %d' % fid0) if D.get('reg_new') else '')
 
 # ---- rebuild centerline, centerpoints, bankpoints
 if REBUILD:

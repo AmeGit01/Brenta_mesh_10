@@ -83,6 +83,8 @@ print('dropped list', sorted(drop)); print(f'new clearance <{CLEAR:g} m', [(roun
 print(f'kept with clearance <{CLEAR:g} m', [(q, r.at[q, fN], round(clear[q], 2)) for q in keep if clear[q] < CLEAR])
 print('new by name', collections.Counter(p['name'] for p in new))
 print('dropped detail', [(q, r.at[q, fN], round(clear[q], 2)) for q in sorted(drop)])
-for q in REPORT: print(q, 'kept' if q in keep else ('dropped' if q in drop else 'n/a'), round(clear[q], 2))
+for q in REPORT:   # a report point may no longer exist in the current layer
+    print(q, 'missing in the current layer' if q not in clear else ('kept' if q in keep else ('dropped' if q in drop else 'n/a')),
+          round(clear[q], 2) if q in clear else '')
 # save
 json.dump(dict(keep=keep, drop=sorted(drop), new=new, nfaces=len(fc)), open(cfg.work('regions2.json'), 'w'))

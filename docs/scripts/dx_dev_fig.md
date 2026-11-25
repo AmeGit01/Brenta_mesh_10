@@ -18,7 +18,7 @@ Otto PNG a 150 dpi:
 | File | Contenuto |
 |---|---|
 | `fig01_schema_dx.png` | schema delle grandezze: (a) una coppia di sezioni con dx_c, dx_avg, dx_min, dx_max e dx_dev; (b) un tratto in curva con la serie dei dx_avg,i, la media, il minimo e dx_dev_abs |
-| `fig02_dx_avg_rami.png` | dx_avg di ogni coppia lungo i rami N, V e B, con la media del ramo |
+| `fig02_dx_avg_rami.png` | dx_avg di ogni coppia lungo i rami (presi dalla colonna `ramo` del CSV), con la media del ramo |
 | `fig03_diff_avg_c_rami.png` | dx_avg − dx_c lungo i rami |
 | `fig04_diff_avg_c_angolo.png` | dx_avg − dx_c in funzione dell'angolo tra le sezioni |
 | `fig05_dx_dev_istogramma.png` | istogramma di dx_dev per ramo, con le eccezioni in grigio e la mediana |
@@ -29,7 +29,7 @@ Otto PNG a 150 dpi:
 ## Uso
 
 ```bash
-python3 scripts/dx_dev_fig.py docs/Brenta_dx_dev_50m.csv docs/figures
+~/anaconda3/bin/python3 scripts/dx_dev_fig.py docs/Brenta_dx_dev_50m.csv docs/figures
 ```
 
 Va lanciato dopo `dx_dev.py`, dalla cartella del progetto.

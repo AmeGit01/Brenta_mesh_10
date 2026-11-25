@@ -18,6 +18,7 @@ A violation of a rule that cannot be removed without breaking a more important r
 | `near_node` | Near-node rule: a breakline vertex within R of a crossing | Another nodestring that cannot move is close to the section; a node shared by several lines; a manual edit by the user |
 | `locked_line` | Near-node rule where the near vertex belongs to a locked line (wall) | Sections among buildings or walls |
 | `spacing` | Spacing outside `spacing ± tol` between two consecutive sections (along the centerline or straight) | A tight bend (the chord is shorter); a section moved by hand; a few millimetres over the limit after a manual edit |
+| `vertices` | A section with more than two vertices | The user bent a section by hand to follow the channel or avoid an obstacle |
 | `angle` | An angle sharper than `min_angle_deg` created by an edit | A section that must cross an oblique line, a constrained junction |
 
 A spacing pair is excluded from the spacing checks when either of its two sections is listed.

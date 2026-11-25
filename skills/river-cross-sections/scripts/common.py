@@ -146,6 +146,11 @@ class Config:
         e = self.raw.get('exceptions', {})
         return {tuple(x['pair']) for x in e.get('spacing', [])}
 
+    def exc_vertices(self):
+        """Sections allowed more than two vertices (one part, left end first), as a set of names (exceptions.vertices)."""
+        e = self.raw.get('exceptions', {})
+        return {x['section'] for x in e.get('vertices', [])}
+
     def locked_lines(self):
         """fids of breaklines that must never be modified (file written by locked_lines.py, in the work folder)."""
         p = self.work(self.raw['locked']['lines_file'])

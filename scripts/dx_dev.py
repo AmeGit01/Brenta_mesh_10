@@ -13,36 +13,40 @@
 #     dt(min dx)/dt(mean dx) = 1 - dx_dev_abs (same velocity). The same quantity is also given for the series dx_c and dx_min
 #     (dx_dev_abs_c, dx_dev_abs_min), together with the per-pair relative step e_i = (dx_avg_i - mean)/mean, the sensitivity to the k
 #     shortest pairs and the list of the shortest pairs.
-# Exceptions (user, 2026-11-18): N16000 and B00000, B00100, B00150, B00200, B00300, B00400, B00450, B00500 (5 m rule, the Borgo ones
-#          because of vertices of the locked wall lines); N01900-N01950, B11200-B11250, B00250-B00300-B00350 (spacing).
-#          Added 2026-11-19 (final mesh): N02150, N15150 (5 m rule); V01050-V01100, B00450-B00500, B00900-B00950 (spacing; V01050, B00450
-#          and B00950 are the edited sections, enough to exclude the pair); N01950-N02000 and B00150-B00200 (spacing, a few mm; already
-#          excluded through N01950 and B00150). A pair is excluded when
-#          at least one of its two sections is an exception section. Every table is given with all pairs and without exceptions.
-# Inputs : argv[1] = layers folder (boundary_50m.gpkg, centerpoints_50m.gpkg); argv[2] = output CSV of the pairs (e.g. docs/Brenta_dx_dev_50m.csv).
+# Exceptions: read from the case configuration (argv[3]). A pair is excluded when at least one of its two sections is named in
+#          exceptions.near_node, .locked_line or .vertices (a section exception touches both its pairs), or when the pair itself is in
+#          exceptions.spacing (a spacing exception concerns that pair only). Every table is given with all pairs and without exceptions.
+# Reaches: codes and order from the configuration (reaches[].code); sections recognised by sections.name_pattern and sorted by reach
+#          order, then by number. Sections may have more than two vertices (exceptions.vertices): distances use the whole polyline,
+#          the angle uses the chord (first to last vertex).
+# History: 2026-11-18 first version with the N, V, B reaches and the exceptions written in the code; 2026-11-24 reaches and exceptions
+#          from the configuration (two reaches V and B after the merge).
+# Inputs : argv[1] = layers folder (boundary_50m.gpkg, centerpoints_50m.gpkg); argv[2] = output CSV of the pairs (e.g. docs/Brenta_dx_dev_50m.csv);
+#          argv[3] = case configuration (docs/rcs_config_brenta_vb.json).
 # Output : the CSV (one row per pair: sez_monte, sez_valle, ramo, dx_c, dx_avg, diff_avg_c, dx_min, dx_max, dx_dev, ang_gradi, larg_m, e_avg_ramo, eccezione)
 #          and Markdown tables printed to stdout (analysis 1, analysis 2, shortest pairs, sensitivity).
-# Run    : python3 scripts/dx_dev.py layers docs/Brenta_dx_dev_50m.csv      (Anaconda python3)
-import sys, csv, re, numpy as np, geopandas as gpd, shapely, warnings; warnings.filterwarnings('ignore')
+# Run    : ~/anaconda3/bin/python3 scripts/dx_dev.py layers docs/Brenta_dx_dev_50m.csv docs/rcs_config_brenta_vb.json
+import sys, csv, re, json, numpy as np, geopandas as gpd, shapely, warnings; warnings.filterwarnings('ignore')
 from shapely.geometry import LineString
-L,OUT=sys.argv[1],sys.argv[2]; NS=201
-EXC={'N16000','N01900','N01950','B11200','B11250','B00250','B00300','B00350',
-     'B00000','B00100','B00150','B00200','B00400','B00450','B00500',   # 5 m rule, vertices of the locked wall lines (B00300 already above)
-     'N02150','N15150','V01050','B00950'}   # added 2026-11-19 after the final mesh: N02150, N15150 (5 m rule); V01050, B00950 (spacing)
+L,OUT,CFG=sys.argv[1],sys.argv[2],sys.argv[3]; NS=201
+cfg=json.load(open(CFG)); CODES=[r['code'] for r in cfg['reaches']]; PAT=re.compile(cfg['sections']['name_pattern']); EX=cfg.get('exceptions',{})
+EXC={x['section'] for k in ('near_node','locked_line','vertices') for x in EX.get(k,[])}; EXP={tuple(x['pair']) for x in EX.get('spacing',[])}
 bd=gpd.read_file(f'{L}/boundary_50m.gpkg'); cp=gpd.read_file(f'{L}/centerpoints_50m.gpkg'); S=dict(zip(cp.nome,cp.s_m))
-sec=bd[bd.nome.str.match(r'^[NVB]\d{5}$')]; G={n:LineString(shapely.get_coordinates(g)[:,:2]) for n,g in zip(sec.nome,sec.geometry)}
-order=list(sec.nome); rows=[]
+sec=bd[bd.nome.map(lambda n: bool(PAT.match(str(n))))]; G={n:LineString(shapely.get_coordinates(g)[:,:2]) for n,g in zip(sec.nome,sec.geometry)}
+reach=lambda n: next(c for c in sorted(CODES,key=len,reverse=True) if n.startswith(c))
+order=sorted(G,key=lambda n:(CODES.index(reach(n)),int(n[len(reach(n)):]))); rows=[]
+print('reaches',CODES,'sections',len(order),'exception sections',sorted(EXC),'exception pairs',sorted(EXP))
 def samp(l): return [l.interpolate(t,normalized=True) for t in np.linspace(0,1,NS)]
 # ---- per-pair quantities
 for a,b in zip(order[:-1],order[1:]):
-    if a[0]!=b[0]: continue
+    if reach(a)!=reach(b): continue
     la,lb=G[a],G[b]; d=[lb.distance(p) for p in samp(la)]+[la.distance(p) for p in samp(lb)]
     avg=float(np.mean(d)); mn=float(la.distance(lb)); mx=float(np.max(d))
-    u=np.diff(shapely.get_coordinates(la),axis=0)[0]; v=np.diff(shapely.get_coordinates(lb),axis=0)[0]
+    ca,cb=shapely.get_coordinates(la),shapely.get_coordinates(lb); u=ca[-1]-ca[0]; v=cb[-1]-cb[0]   # chords
     ang=float(np.degrees(np.arccos(np.clip(np.dot(u,v)/np.linalg.norm(u)/np.linalg.norm(v),-1,1))))
-    rows.append(dict(sez_monte=a,sez_valle=b,ramo=a[0],dx_c=S[b]-S[a],dx_avg=avg,diff_avg_c=avg-(S[b]-S[a]),dx_min=mn,dx_max=mx,dx_dev=(avg-mn)/avg,
-                     ang_gradi=ang,larg_m=(la.length+lb.length)/2,eccezione=int(a in EXC or b in EXC)))
-for R in 'NVB':
+    rows.append(dict(sez_monte=a,sez_valle=b,ramo=reach(a),dx_c=S[b]-S[a],dx_avg=avg,diff_avg_c=avg-(S[b]-S[a]),dx_min=mn,dx_max=mx,dx_dev=(avg-mn)/avg,
+                     ang_gradi=ang,larg_m=(la.length+lb.length)/2,eccezione=int(a in EXC or b in EXC or (a,b) in EXP)))
+for R in CODES:
     m=np.mean([r['dx_avg'] for r in rows if r['ramo']==R])
     for r in rows:
         if r['ramo']==R: r['e_avg_ramo']=(r['dx_avg']-m)/m
@@ -52,7 +56,7 @@ with open(OUT,'w',newline='') as fh:
     for r in rows: w.writerow({k:(round(r[k],4) if isinstance(r[k],float) else r[k]) for k in cols})
 # sets: per reach and total, with all pairs and without exceptions
 SETS=[(f"{('ramo '+R) if R else 'totale'}, {lab}",[r for r in rows if fl(r) and (R is None or r['ramo']==R)])
-      for lab,fl in (('tutte',lambda r: True),('senza eccezioni',lambda r: not r['eccezione'])) for R in ('N','V','B',None)]
+      for lab,fl in (('tutte',lambda r: True),('senza eccezioni',lambda r: not r['eccezione'])) for R in (*CODES,None)]
 pair=lambda r: f"{r['sez_monte']}–{r['sez_valle']}"
 # ---- ANALYSIS 1: dx_dev per pair
 print('## Analisi 1: dx_dev = (dx_avg - dx_min) / dx_avg, per coppia\n')

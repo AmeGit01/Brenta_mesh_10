@@ -1,6 +1,6 @@
 # dx_dev.py
 
-Quarto passo (2026-11-18). Analisi statistica, in sola lettura, del passo dx tra sezioni consecutive dello stesso ramo, su due livelli:
+Quarto passo (2026-11-18; dal 2026-11-24 rami ed eccezioni si leggono dalla configurazione). Analisi statistica, in sola lettura, del passo dx tra sezioni consecutive dello stesso ramo, su due livelli:
 
 * **Analisi 1, locale:** dx_dev per ogni coppia, cioè quanto una sezione è inclinata rispetto alla successiva;
 * **Analisi 2, globale:** dx_dev_abs per un ramo o per l'intero modello, cioè quanto il passo più corto è inferiore al passo medio. È la grandezza che conta per il dt di un modello 1D esplicito (condizione CFL).
@@ -13,17 +13,20 @@ Quarto passo (2026-11-18). Analisi statistica, in sola lettura, del passo dx tra
 
 * Argomento 1: la cartella dei layer (`boundary_50m.gpkg`, `centerpoints_50m.gpkg`).
 * Argomento 2: il CSV di uscita, normalmente `docs/Brenta_dx_dev_50m.csv`.
+* Argomento 3: la configurazione del caso, `docs/rcs_config_brenta_vb.json`. Se ne leggono i rami (`reaches[].code`, nell'ordine dato), il modello dei nomi delle sezioni (`sections.name_pattern`) e le eccezioni (`exceptions`).
 
 ## Grandezze per coppia
 
 Per la coppia i, formata dalle sezioni k e k+1 dello stesso ramo:
 
 * **dx_avg,i:** distanza media tra le due sezioni. Ognuna si campiona in `NS` = 201 punti equidistanti; per ogni punto si misura la distanza dall'altra sezione (il segmento, non la retta). La media è su tutti i 402 punti, quindi è simmetrica.
-* **dx_min,i:** distanza minima tra i due segmenti.
+* **dx_min,i:** distanza minima tra le due sezioni.
+
+Una sezione con più di due vertici (eccezione `vertices`, oggi la B16100) è trattata come spezzata: le distanze si misurano su tutta la linea.
 * **dx_max,i:** massimo delle distanze campionate.
 * **dx_c,i:** distanza lungo la linea d'asse, cioè la differenza di `s_m`.
 * **dx_avg,i − dx_c,i:** differenza tra le due misure del passo (colonna `diff_avg_c`).
-* **angolo** tra le due sezioni (gradi) e **larghezza** media (m).
+* **angolo** tra le due sezioni (gradi), misurato sulle corde dal primo all'ultimo vertice, e **larghezza** media (m).
 
 ## Analisi 1
 
@@ -37,7 +40,7 @@ Vale 0 per sezioni parallele. Lo script stampa:
 
 ## Analisi 2
 
-Su un insieme di coppie (ramo N, V, B o tutte insieme):
+Su un insieme di coppie (un ramo o tutte insieme):
 
 **dx_dev_abs = (media dx_avg − min dx_avg) / media dx_avg** (≥ 0)
 
@@ -50,12 +53,13 @@ In uno schema esplicito il passo temporale ammesso dalla condizione CFL è dt �
 
 ## Eccezioni
 
-Le eccezioni sono quelle decise dall'utente il 18 novembre, più quelle aggiunte il 19 novembre dopo la mesh definitiva:
+Si leggono dalla configurazione. Una coppia è esclusa dalle statistiche "senza eccezioni" se:
+* almeno una delle due sezioni compare in `exceptions.near_node`, `exceptions.locked_line` o `exceptions.vertices` (un'eccezione di sezione tocca le sue due coppie);
+* oppure la coppia stessa è in `exceptions.spacing` (un'eccezione di passo riguarda solo quella coppia).
 
-* **regola dei 5 m:** N16000, B00000, B00100, B00150, B00200, B00300, B00400, B00450, B00500; dal 19 novembre anche N02150 e N15150;
-* **passo:** N01900–N01950, B11200–B11250, B00250–B00300–B00350; dal 19 novembre anche V01050, B00450 e B00950, le sezioni modificate a mano delle coppie V01050–V01100, B00450–B00500 e B00900–B00950. Le coppie N01950–N02000 e B00150–B00200, oltre i 50.5 m di pochi millimetri, sono escluse già attraverso N01950 e B00150.
+Al 24 novembre 2026, sera, le eccezioni accettate escludono 25 coppie (2 nel ramo V, 23 nel ramo B). Ogni tabella è data con tutte le coppie e senza eccezioni.
 
-Una coppia è esclusa dalle statistiche "senza eccezioni" se almeno una delle due sezioni è un'eccezione, quindi basta indicare la sezione modificata. Le coppie escluse sono 27 (erano 19 fino al 19 novembre). Ogni tabella è data con tutte le coppie e senza eccezioni.
+Fino al 19 novembre le eccezioni erano scritte nel codice, con i rami N, V e B. Sui layer di allora lo script attuale dà le stesse grandezze per tutte le 732 coppie; cambiano solo 5 coppie vicine a eccezioni di passo, che prima erano escluse e ora no.
 
 ## Output
 
@@ -65,7 +69,7 @@ Una coppia è esclusa dalle statistiche "senza eccezioni" se almeno una delle du
 ## Uso
 
 ```bash
-python3 scripts/dx_dev.py layers docs/Brenta_dx_dev_50m.csv
+~/anaconda3/bin/python3 scripts/dx_dev.py layers docs/Brenta_dx_dev_50m.csv docs/rcs_config_brenta_vb.json
 ```
 
 ## Limiti

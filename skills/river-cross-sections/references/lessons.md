@@ -21,3 +21,8 @@ Problems met on the Brenta (November 2026), how to recognise them and what to do
 | `python3` has no geopandas | Two interpreters: one with geopandas and shapely, one with GDAL/OGR | Record both in `python` of the configuration and use the one each sheet names |
 | Bankpoint values not reproducible in QGIS | Interpolated DTM values | Always read the cell value |
 | A sharp angle gives distorted elements | A moved line or a section meets another line at a small angle | Angle rule: no new angle under 30° (`check_angles.py`) |
+| A section edited by hand no longer crosses its centerline | The centerline had been cut at the last section | Each centerline runs to the end of its source line |
+| New faces without a region point after manual edits | An edited section goes beyond the toe and cuts a bank, a wall or a culvert | Shorten the section, or add a point with the attributes of the region it comes from (a hole point for a culvert); ask the user |
+| Merging two reaches breaks the spacing at the junction | The gap between the reaches is not a multiple of the spacing | Compute the shift needed first; move all the sections of one reach by the same amount and add sections in the gap |
+| A nodestring must become a section | Example: a branch starts at a divergence nodestring | Rename it (`write3.py` `rename`); it keeps its fid; its ends are its bankpoints |
+| A breakline vertex 0.1–0.8 mm from a crossing | The crossing was moved by hand after the breakline was fixed | `snap_near_nodes.py` moves any vertex farther than 1e-6 m onto the crossing |

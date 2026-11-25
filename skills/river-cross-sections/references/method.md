@@ -5,7 +5,7 @@ Rules for building the sections and why each one exists. The values in brackets 
 ## Contents
 
 1. [Terms](#1-terms)
-2. [Centerlines](#2-centerlines)
+2. [Centerlines](#2-centerlines) (and [changing the reaches](#changing-the-reaches))
 3. [Bank widening (optional)](#3-bank-widening-optional)
 4. [Section positions and centerpoints](#4-section-positions-and-centerpoints)
 5. [Bankpoints](#bankpoints)
@@ -40,9 +40,21 @@ The sections are placed along a centerline that follows the middle of the bed.
 - **Smoothing.** The skeleton is jagged, so the path is smoothed with a Gaussian filter whose width follows the bed width (6 m where the bed is narrow, up to 60 m where it is wide). It is then resampled every 1 m, so that the array index is the chainage in metres.
 - **Measurements.** At every metre the table also stores the perpendicular distances to the toe lines and to the top-of-bank lines on both sides.
 
-A **reach** is a stretch of a centerline that gets its own numbered sections. It is defined by its start and end: a nodestring, a chainage or the end of another reach. Reaches are separate where a junction cannot be represented by a 1D model. In the 2D mesh the reaches stay connected, and the stretch between them has no sections.
+A **reach** is an independent sequence of sections along one centerline, with its own chainage (0 at its start) and its own names (code + position × spacing). It is defined by its start and end: a nodestring, a chainage or the end of another reach. How many reaches there are, what they cover and how they are called is decided with the user at the start ([kickoff.md](kickoff.md)). Reaches are typically separated where a junction cannot be represented by a 1D model. In the 2D mesh the reaches stay connected; a stretch between two reaches can stay without sections.
 
-The centerline layer contains one line per reach.
+The centerline layer contains one line per reach. Each line runs to the end of its source line, not only to the last section, so that a section moved by hand beyond the last position still crosses it.
+
+### Changing the reaches
+
+Reaches can be added, removed, merged or split during the work. Always:
+
+1. **Agree the new layout with the user:** the reaches, their extent, codes, first numbers and names. If some sections must move to keep the spacing, compute first how much and show it. On the Brenta, merging two reaches needed all the sections of the upstream reach to move by 27.23 m.
+2. **Keep what does not need to change.** Sections that stay where they are keep their geometry and attributes; only names, chainages and `dist_next` change.
+3. **Recompute moved or new sections with the method,** not by translating the old lines. Check the computation first on the current positions: it must give back the delivered bankpoints, except the manual ones.
+4. **Turning a nodestring into a section:** it keeps its fid and gets a section name (`write3.py` key `rename`). Its bankpoints are its two ends (`nodestring`, rule = its new name), and its centerpoint is the crossing with the extended centerline.
+5. **Update the configuration:** `centerlines`, `reaches`, `sections.name_pattern`, `anchors`, `nodestrings.count`. Exception names must be remapped with the user, who must also accept the old exceptions again under the new names.
+6. **Change only the region points of the faces touched by the change.**
+7. **Run all the checks,** and give the user the list of violations and of the manual work lost (sections edited by hand that were recomputed).
 
 ## 3. Bank widening (optional)
 
@@ -112,11 +124,13 @@ Maxima in the **lower half of the bank** are discarded: those below z_toe + 0.5 
 
 ## 7. Near-node rule
 
-Where a section crosses a breakline, BASEmesh creates a mesh node. A breakline vertex close to that node produces tiny or very elongated elements between the two. Therefore **no breakline vertex may lie closer than the near-node distance R to a crossing** with a section or a nodestring. R is chosen by the user (Brenta: 5 m).
+Where a section crosses a breakline, BASEmesh creates a mesh node. A breakline vertex close to that node produces tiny or very elongated elements between the two. Therefore **no breakline vertex may lie closer than the near-node distance R to a crossing** with a section or a nodestring. R is chosen by the user (Brenta: 2 m).
 
 The vertex of the other toe of the same section does not count: in a bed narrower than R it is necessarily within R, and it is a node of the section, not of the breakline.
 
-**How it is fixed.** The breakline moves, never the nodestring, and the crossing point stays exactly where it is:
+**How it is fixed: move the near vertex onto the crossing** (`snap_near_nodes.py`, the preferred method). The nearest near vertex of the crossed breakline is moved exactly onto the crossing point. Lines sharing that vertex move with it, and no new vertex is created. Other plain near vertices of the same breakline are deleted. Even a vertex a fraction of a millimetre off the crossing is moved, because it would give a mesh edge of that length. A near vertex on another line cannot be moved there, because that would connect two lines; it is reported. Every move passes the acceptance rules below.
+
+**Alternative for the cases the move cannot solve** (`fix_near_nodes.py`). The breakline moves, never the nodestring, and the crossing point stays exactly where it is:
 
 1. every crossing of a section or nodestring with a breakline becomes a fixed vertex of the breakline. So does every T-junction (a line ending on the inside of another), so removing a vertex can never detach a line and merge two regions;
 2. intermediate vertices within R of the crossing are removed;
@@ -153,6 +167,7 @@ Every edit of a breakline or nodestring (widening, near-node fixes, closures, ma
 
 ## 9. Region points
 
+- **Why faces appear without a point.** Any new or moved line can split a face in two; the existing point stays in one half and the other half has none. A typical case is a section edited by hand that goes beyond the toe and also cuts a bank, a wall, a building or a culvert. The half without a point gets no material, and its mesh elements have material 0. The fix is either to shorten the line so it no longer cuts the face, or to give the new face a point with the attributes of the region it comes from. A piece of a hole region (bridge, pier, culvert) gets a hole point. A section should not cross a hole at all: shorten it. Ask the user which.
 - **One point per face.** Every face of the final planar graph has exactly one region point. A face without a point has no material; a face with two points has ambiguous attributes.
 - **Merged faces.** If two regions merge, the original point is kept if there is one, otherwise the one with the lowest fid.
 - **Clearance.** A kept point must be at least 1 m from every line; otherwise another candidate is chosen. This does not apply to an original point in a strip narrower than 2 m (walls), where no point can be 1 m from the lines: an original point is never replaced there.

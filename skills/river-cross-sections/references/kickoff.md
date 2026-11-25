@@ -32,19 +32,30 @@ A numbered list of the steps of [SKILL.md](../SKILL.md#workflow), with the ones 
 
 ## 3. Questions
 
-Ask with one grouped set of questions, offering the value found in the survey as the proposed answer when there is one. Always cover:
+Ask with one grouped set of questions, offering the value found in the survey as the proposed answer when there is one.
+
+**Ask about the reaches first,** because everything else (centerlines, placement, names, checks) depends on them. A reach is an independent sequence of sections with its own centerline, chainage and names, for example a main stem, an old course or a side channel. Propose a layout from the survey: the boundary conditions, the branches of the bed and the existing nodestrings. Then ask:
+
+1. **How many independent reaches** are wanted, and which stretch of the river each covers: from which nodestring or chainage to which. Say where reaches meet or overlap. Junctions that a 1D model cannot represent are a reason to split.
+2. **How each reach is called and identified:** the name of its centerline, the code used in the section names (a letter or a short prefix, e.g. `B`, `V`, `S1`), the number of the first section (0 or one spacing) and the number of digits.
+3. **Which nodestrings start or end a reach,** and whether an existing nodestring must become a section of a reach. Example: the divergence of a branch renamed as its first section.
+4. **Anchored sections:** sections that must coincide with a gauging station or a measuring section.
+
+The reaches can change later (added, removed, merged or split). See [method.md](method.md#changing-the-reaches).
+
+Always cover also:
 
 | Topic | Question | Config key |
 |---|---|---|
+| Reaches | Number, extent, names, codes, first number, start and end of each reach (see above) | `centerlines`, `reaches`, `sections.name_pattern`, `sections.digits` |
 | Spacing | Target spacing between consecutive sections and tolerance (dx_c ± tol, e.g. 50 ± 0.5 m) | `sections.spacing`, `sections.tol` |
-| Near-node rule | Minimum distance between a breakline vertex and the node where a section crosses that breakline (e.g. 5 m) | `rules.near_node.radius` |
+| Near-node rule | Minimum distance between a breakline vertex and the node where a section crosses that breakline (e.g. 2 m; the near vertex is then moved onto the crossing) | `rules.near_node.radius` |
 | Locked regions | Are there regions whose bounding breaklines must never be touched (e.g. walls, buildings, piers)? Which names or `mat_id`? | `locked.mat_ids` |
 | Fixed-geometry regions | Which regions must keep their outline (e.g. the bed: toes never move)? | `face_classes.fixed` |
 | Editable regions | Which regions may change outline (e.g. intermediate strips, banks to widen)? | `face_classes.editable` |
 | Region classes | Confirm the mapping of region names to classes: bed, bank, intermediate, wall, floodplain | `face_classes` |
-| Reaches | Upstream and downstream boundary conditions; branches (side channels, old courses) that need their own sections; junctions where a reach ends | `nodestrings`, `centerlines`, `reaches` |
+| Boundary conditions | Upstream and downstream boundary conditions of the domain | `nodestrings` |
 | Anchors | Sections that must coincide with an existing nodestring (gauging station, measuring section) | `anchors` |
-| Naming | Section names: reach code plus nominal chainage (`N00050`), number of digits, first number | `sections`, `reaches[*].first_number` |
 | Bankpoints | The bankpoint definition is in [method.md](method.md#bankpoints). Confirm or change the parameters: minimum prominence, distance from the top-of-bank line (edge of the intermediate strip), maximum half-width | `params.bank` |
 | Widening | Should the banks be widened where the bed + bank corridor is too narrow? With which criterion (corridor width or width of each bank) and where? | `widening` |
 | Angles | Minimum angle between lines after an edit (default 30°) | `rules.min_angle_deg` |

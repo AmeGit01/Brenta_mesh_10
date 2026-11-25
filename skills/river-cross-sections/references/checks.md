@@ -10,10 +10,10 @@ Each script prints a numbered list. Each line ends with `OK` or `**CHECK**`, or 
 |---|---|
 | Start of the work | `init_outputs.py` (SHA-256 of the originals), `graph.py --layers in` (defects of the original data) |
 | After bank widening | `gaps.py`, `check_widen.py`, `check_angles.py` |
-| After the near-node fix | `check_near_nodes.py`, `check_geom.py`, `check_angles.py` |
+| After the near-node fix | `snap_near_nodes.py` again (must move nothing), `verify3.py`, `check_angles.py`; after `fix_near_nodes.py` also `check_near_nodes.py`, `check_geom.py` |
 | After every write | `verify3.py`, `verify3_dtm.py`, `check_regions.py`, `check_angles.py` |
 | After the first complete write | also `check_bp.py` (bankpoints recomputed independently) |
-| After manual edits | `sync_cp_bp.py` (must report 0 changes once the layers are realigned), then the after-write checks |
+| After manual edits | `sync_cp_bp.py` (must report 0 changes once the layers are realigned), `snap_near_nodes.py`, then the after-write checks |
 | After the user regenerates the mesh | `check_mesh.py mesh/<file>.2dm` |
 | End of the work | `init_outputs.py --check` (originals unchanged) |
 

@@ -6,7 +6,7 @@
 #          originals, clearance); (H) GeoPackage integrity; (I) angle rule.
 # Inputs : config keys: outputs.* (the six derived layers), inputs.regions/breaklines/boundary (originals), fields.*, bankpoint_values,
 #          sections.* (name_pattern, digits, spacing, tol, first_fid, first_id), reaches[*] (code, first_number, chainage),
-#          nodestrings.count, exceptions.* (via cfg.exc_near_node/exc_wall/exc_spacing), locked.* (via cfg.locked_lines(): work/<lines_file>),
+#          nodestrings.count, exceptions.* (via cfg.exc_near_node/exc_wall/exc_spacing/exc_vertices), locked.* (via cfg.locked_lines(): work/<lines_file>),
 #          originals.*, rules.near_node.radius, rules.min_angle_deg, exceptions.angle (check (I), see check_angles.py), rules.regions.clearance, project.crs,
 #          params.verify3 {kinds, kind_max, kind_wall, prom_min, notes{multi,null,moved}}; for reaches with chainage mode
 #          'cut_reference': the reference GeoPackage named in the config.
@@ -66,9 +66,10 @@ out(f'section names: per reach consecutive multiples of {STEP}, in reach order {
 F0, I0 = SC['first_fid'], SC['first_id']; ns = len(sec)
 out(f'boundary: names unique {bd["name"].is_unique}, ids unique {bd["id"].is_unique}, no null id/name {bool(bd["id"].notna().all() and bd["name"].notna().all())}; section fid {F0}.. and id {I0}.. consecutive {list(sec.index) == list(range(F0, F0 + ns)) and list(sec["id"]) == list(range(I0, I0 + ns))}',
     bd['name'].is_unique and bd['id'].is_unique and list(sec.index) == list(range(F0, F0 + ns)) and list(sec['id']) == list(range(I0, I0 + ns)))
-gt = set(sec.geometry.geom_type); np_ = [n for n, g in zip(sec['name'], sec.geometry) if len(g.geoms) != 1 or len(co(g)) != 2]
+EXCV = cfg.exc_vertices()  # sections allowed more than two vertices (exceptions.vertices)
+gt = set(sec.geometry.geom_type); np_ = [n for n, g in zip(sec['name'], sec.geometry) if len(g.geoms) != 1 or len(co(g)) < 2 or (len(co(g)) != 2 and n not in EXCV)]
 zm = [n for n, g in zip(sec['name'], sec.geometry) if np.abs(shapely.get_coordinates(g, include_z=True)[:, 2]).max() > 0]
-out(f'sections: geometry types {gt}, not one part with 2 vertices {np_}, z not 0 {zm}', not np_ and not zm)
+out(f'sections: geometry types {gt}, not one part with 2 vertices {np_}, z not 0 {zm}; more vertices by exception {sorted(EXCV)}', not np_ and not zm)
 # ---- (B) centerline
 line = {r.reach: r.geometry for r in cl.itertuples()}; lm = [(r.name, round(r.length - r.geometry.length, 6)) for r in cl.itertuples() if abs(r.length - r.geometry.length) > 1e-6]
 out(f'centerline: ramo {sorted(line)}, lung_m = geometry length (differences {lm})', sorted(line) == sorted(CODES) and not lm)
@@ -108,7 +109,7 @@ origin_ok = all(C[r['chainage']['origin_section']].s == 0 for r in REACHES if r[
 out(f'centerpoints: dist_next = s_m(next) - s_m, null for the last of each reach (problems {dn}); s_m starts {"/".join(f"{C[n].s:.2f}" for n in firsts)}', not dn and origin_ok)
 # ---- (D) bankpoints
 B = {r.name: r for r in bp.itertuples()}; bad = []
-NSg = {n: co(g) for n, g in zip(oth['name'], oth.geometry)}
+NSg = {n: co(g) for n, g in zip(bd['name'], bd.geometry)}   # every boundary feature: a section may itself be a nodestring renamed as a section
 for nm, g in zip(sec['name'], sec.geometry):
     v = co(g)
     for t, p in ((LEFT, v[0]), (RIGHT, v[-1])):

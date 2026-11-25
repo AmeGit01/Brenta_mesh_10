@@ -673,3 +673,146 @@ Su richiesta dell'utente il materiale è diventato una skill completa, in ingles
 1. `check_angles.py`: 2 angoli nuovi sotto i 30°: breakline 853/1126 a 17.3° vicino a (689818, 5102909), sezione B01750 sulla breakline 1367 a 27.5° vicino a (691509, 5102701). Gli elementi più distorti della mesh (15.9° e 22.5°) cadono negli stessi punti.
 2. `check_mesh.py` su `mesh/10_quality-mesh.2dm`: 38 elementi con materiale 0, centrati in (689502, 5103002), cioè nella faccia senza punto regione segnalata da `verify3`; la mesh è più vecchia dell'ultima modifica dei layer; il lato più corto è 0.55 m (i lati di 0.2 mm alla B12600 non ci sono più).
 3. `verify3.py`: tutto il resto invariato (22 controlli `OK`), con i due punti regione `sponda_nat` con `max_area` 2.0 già segnalati.
+
+## 24 novembre 2026: sezioni in due rami, V e B
+
+Su richiesta dell'utente i rami passano da tre a due. Il ramo V resta uguale, con in più la **V00000**, cioè la nodestring `divergenza_valle_brenta_vecchio` rinominata. Il ramo **B** va da Caldonazzo a valle. Lo script è [merge_vb.py](scripts/merge_vb.md); calcoli, scrittura e verifiche usano gli script della skill `river-cross-sections`.
+
+* **Il problema del passo.** Tra la N16050 (s 16130.0) e la B00000 (s 16252.77) c'erano 122.77 m. Con due sezioni nuove la N16050 sarebbe finita a 22–25 m dalla N16000. Su indicazione dell'utente **tutte** le vecchie N sono state spostate verso monte della stessa quantità, **27.23 m**, quindi il passo tra loro non cambia. La vecchia N16050 cade così 150 m a monte della vecchia B00000, e le due sezioni nuove (B16050, B16100) stanno a 50.0 m esatti.
+* **Nomi** (scelti dall'utente): B00000 è la prima sezione, a 23.02 m dal BC di Caldonazzo. Le vecchie N diventano B con numero −50 (N00050 → B00000, N16050 → B16000); le vecchie B diventano B con numero +16150 (B00000 → B16150, B00400 → B16550 su `idrometro_Borgo`, B17650 → B33800).
+* **Vecchie N:** ricalcolate nelle nuove posizioni con il metodo della skill: perpendicolari alla corda, piedi e cigli dai layer attuali, bankpoint con `next_bed`, `obst` e `bank`. Prima ho verificato il calcolo sulle posizioni N attuali: 636 bankpoint su 642 tornano uguali entro 1 cm. Le differenze sono i due bankpoint manuali (N00150 sx, N01950 sx), il prolungamento della N16050 nel canale di destra e tre scarti di 1–5 cm.
+* **Vecchie B:** geometria e attributi invariati; cambiano solo nome e progressiva, ora misurata da Caldonazzo.
+* **Ramo V:** la linea d'asse è prolungata di 2.356 m fino alla V00000, quindi tutte le progressive V crescono di 2.356 m. I bankpoint della V00000 sono gli estremi della nodestring (`nodestring`, regola `V00000`).
+* **Punti regione:** 68 tolti e 70 aggiunti, solo nelle facce toccate dalle sezioni. Tra quelli tolti ci sono l'originale 47, a 0.11 m da una sezione spostata e sostituito, e i punti 921 e 932, che erano doppioni dopo la rimozione del prolungamento della vecchia N16050. Il punto per la faccia senza punto creata dall'utente (247.7 m², vicino a 689500, 5103012) **non** è stato aggiunto, perché non dipende dalle sezioni.
+* **Scrittura:** `write3.py` della skill, backup `20261124a` (boundary, regioni_ponti, centerline, centerpoints, bankpoints) e `20261124b` (correzione della regola dei bankpoint V00000). Le breakline non sono state toccate. Configurazione della skill per lo stato V/B: [rcs_config_brenta_vb.json](rcs_config_brenta_vb.json).
+* **Skill aggiornata:**
+  * `write3.py`: nuova chiave `rename`; la sostituzione delle sezioni non tocca più i fid sotto `first_fid`;
+  * `verify3.py`: la regola `nodestring` di un bankpoint si cerca fra tutte le nodestring;
+  * `regions2.py`: non si ferma più se un punto da riportare non esiste.
+
+### Verifiche (skill, file riletti dal disco, eccezioni vuote)
+
+1. Conteggi: 52 nodestring + 738 sezioni, 738 centerpoint, 1476 bankpoint, 2 linee d'asse. Nomi, geometrie, verso sx→dx, centerpoint, bankpoint e integrità dei GeoPackage sono `OK`.
+2. `sync_cp_bp.py`: 0 cambiamenti. `verify3_dtm.py`: le quote coincidono con il DTM.
+3. Ognuna delle 323 sezioni ricalcolate incrocia esattamente due breakline, nessuna nodestring e nessun'altra sezione.
+4. `check_regions.py`: 911 facce, una sola senza punto (quella dell'utente), stabili all'arrotondamento a 1 mm e a 1 cm.
+5. Fid della V00000: resta 22, fuori dal blocco delle sezioni. La riga 3 di `verify3` dà quindi `**CHECK**`: è atteso.
+
+### Da mappare con l'utente (eccezioni e casi da sistemare a mano)
+
+* **Passo lungo la linea d'asse.** Le vecchie eccezioni con i nomi nuovi: B01900–B01950, B16300–B16350, B16400–B16450–B16500, B16600–B16650, B17050–B17100 e V01050–V01100. In più la nuova **V00000–V00050, 52.36 m**.
+* **Passo in linea retta.** Nuove curve strette dopo lo spostamento: B02100–B02150 (47.3 m), B02250–B02300 (42.5 m) e B16050–B16100 (49.1 m). Restano B01900–B01950 (48.1 m) e B27350–B27400 (47.9 m).
+* **Regola dei nodi vicini:**
+  * 153 incroci in 101 sezioni: 100 del vecchio N spostato e la V00000. Le breakline erano state ripulite attorno ai vecchi incroci, non ai nuovi; serve rilanciare la regola sulle breakline;
+  * ai muri di Borgo: B16100 (nuova, 3.95 m), più le vecchie eccezioni con i nomi nuovi.
+* **Breakline posate sulle vecchie sezioni:** la 1225 (sulla vecchia N15050) e la striscia della sorgente 987/988 (sulla vecchia N11750) ora non coincidono più con nessuna sezione.
+* **Facce strette:** due facce in cui il punto nuovo può stare solo a 0.33 m (B06800) e a 0.52 m (B08900) dalle linee, e il punto `source_3_brenta_3` nuovo (fid 1021) vicino alla B11650.
+* **Lavoro manuale perso:** le correzioni a mano delle vecchie N00150 sx e N01950 sx, e il prolungamento della N16050 nel canale di destra.
+* **Angoli sotto i 30°:** invariati, cioè 853/1126 (in lavorazione dall'utente) e 1367/B17900 (ex B01750).
+* **Già presenti prima:** la faccia senza punto e i due punti `sponda_nat` con `max_area` 2.0.
+
+## 24 novembre 2026, mattina: sezioni modificate a mano e regola dei nodi vicini a 2 m
+
+L'utente ha modificato a mano V03000, B15900, B15950, B16000, B16050 e B16100. Nella stessa sessione in QGIS sono state cambiate anche breakline e punti regione, e tolte le nodestring `link_borgo_monte` e `link_borgo_valle`; le nodestring sono ora 50. Ho lavorato a layer chiusi, con gli script della skill e `docs/rcs_config_brenta_vb.json`.
+
+1. **Linea d'asse V.** Era tagliata alla vecchia V03000, quindi la V03000 spostata non la incrociava più. L'ho prolungata fino alla confluenza: è l'intera `brenta_vecchio` più i 2.36 m fino alla V00000. Backup `20261124c`. La regola vale anche per la skill: una linea d'asse arriva alla fine della sua linea d'origine.
+2. **Bankpoint.** `sync_cp_bp.py` trova le 6 sezioni modificate: 7 bankpoint diventano `manuale`, con la quota della cella DTM, e i centerpoint si spostano di pochi millimetri. Backup `20261124d`. Rilanciato, dà 0 cambiamenti.
+3. **Regola dei nodi vicini: raggio 2 m.** Il vertice vicino si sposta sull'incrocio invece di crearne uno nuovo (`snap_near_nodes.py`, nuovo script della skill).
+   * 66 vertici spostati, al massimo di 2.0 m, e 1 eliminato vicino alla V00000. Le linee collegate seguono il vertice. Backup `20261124e`.
+   * Poi altri 2 vertici a 0.8 mm (V03000) e 0.1 mm (B02750) dall'incrocio. Backup `20261124f`.
+   * Le violazioni scendono da 153 (a 5 m) a 10 (a 2 m).
+
+### Verifiche (file riletti dal disco)
+
+1. `sync_cp_bp.py`: 0 cambiamenti. `verify3_dtm.py`: le 1476 quote coincidono con il DTM.
+2. `snap_near_nodes.py` rilanciato: nessuno spostamento. `fix_manual.py`: nessun vertice da spostare.
+3. Regola dei nodi vicini (2 m): restano 10 violazioni.
+   * 6 su linee dei muri bloccate: B15950, B16250, B16450 (due), B16600 e B16650.
+   * 4 rifiutate: alla B06800 il vertice sta su un'altra nodestring o sezione; alla B08900 c'è un punto regione nell'area spostata e si formerebbe un angolo di 7.3°.
+4. `check_angles.py`: nessun angolo nuovo oltre ai due già noti (853/1126 e 1367/B17900).
+5. `check_regions.py`: 916 facce, **6 senza punto**; nessuna con due punti; risultato stabile all'arrotondamento.
+   * 5 facce sono nate dalle sezioni modificate a mano. B16050 e B16100 tagliano oltre il piede una sponda urbana, il letto di Borgo e il **sottopasso** (un buco); B15900, B15950, B16050 e B16100 incrociano 3–4 breakline invece di 2.
+   * La sesta (247.7 m², sponda naturale) è tagliata dalla V02700, che incrocia 3 breakline.
+   * Non ho aggiunto punti: va deciso con l'utente se accorciare le sezioni o aggiungere i punti.
+6. La B16100 ha 3 vertici.
+
+### Documenti e skill
+
+* **Documenti del progetto:** il documento delle regole è riscritto sullo stato attuale. L'analisi statistica del passo è segnata come da rifare.
+* **Skill:**
+  * la prima domanda è sui rami: quanti, quale tratto copre ciascuno, nomi e codici;
+  * nuovo paragrafo del metodo su come aggiungere, togliere, unire o dividere i rami;
+  * nuovo script `snap_near_nodes.py`;
+  * spiegazione delle facce senza punto;
+  * nuove voci nelle lezioni.
+
+## 24 novembre 2026, pomeriggio: B16250, punti regione mancanti, muri nuovi, eccezione B16100
+
+In QGIS l'utente ha modificato a mano una sezione, ha aggiunto due muri a Borgo (breakline 1462, un anello chiuso in destra, e 1463 in sinistra; la 893 ora passa per i vertici del 1462) e ha tolto il sottopasso di Borgo con le nodestring `link_borgo_monte` e `link_borgo_valle`, per far passare l'acqua in superficie. Le breakline 375 e 891 si sono spostate di meno di 1 mm (snap di QGIS). Ho lavorato a layer chiusi, con gli script della skill.
+
+1. **Sezione modificata.** `sync_cp_bp.py` trova solo la **B16250** (la B16200 coincide già con i suoi bankpoint, `manuale` da prima). I due bankpoint diventano `manuale`, spostati di 1.1 m, e il centerpoint si sposta di 6 mm.
+2. **Punti regione: 8 facce senza punto, tutte riempite.** Il punto è messo nel luogo più lontano dai bordi; gli attributi sono quelli della regione da cui la faccia è stata tagliata, cioè del punto che sta nella faccia ottenuta togliendo la sezione che la taglia.
+   * 2 facce dentro i muri nuovi 1462 e 1463: `muro`, materiale 11, area massima 2.0 (fid 1051 e 1053).
+   * 3 `sponda_antro` (fid 1049, 1055, 1056), 1 `bed_borgo` (1050), tagliate da B16050 e B16100.
+   * 1 `sponda_nat` (1052), tagliata dalla V02700.
+   * 1 `sottopasso-borgo` (1054), copiato dal punto 30 così com'è: materiale 1, `buco` = 1.
+3. Le due scritture insieme, backup `20261124g` (regioni, linea d'asse, centerpoint, bankpoint).
+4. **Linee bloccate.** Ricalcolate anche sui punti regione derivati: si aggiungono 1462 e 1463; le linee bloccate prima restano bloccate (34 in tutto, file di lavoro della skill).
+5. **Eccezione.** La B16100 con 3 vertici è accettata dall'utente. Nella skill c'è una nuova categoria `exceptions.vertices`, letta da `verify3.py`.
+6. Tabella delle sezioni rigenerata (738 righe).
+
+### Verifiche (file riletti dal disco)
+
+1. `sync_cp_bp.py`: 0 cambiamenti. `verify3_dtm.py`: le 1476 quote coincidono con il DTM.
+2. `check_regions.py`: 918 facce, nessuna senza punto, nessuna con due punti; stabile all'arrotondamento a 1 mm e a 1 cm.
+3. `verify3.py`: sezioni, centerpoint e bankpoint `OK`; la B16100 passa come eccezione.
+4. `snap_near_nodes.py`: nessuno spostamento possibile. Restano 11 violazioni della regola dei nodi vicini: 7 su linee dei muri (si aggiunge la B16250, con un vertice condiviso con il muro 1463) e le 4 di B06800 e B08900.
+5. **Da decidere con l'utente:**
+   * punto 30 e nuovo 1054 `sottopasso-borgo`: materiale 1 ma `buco` = 1, quindi restano un buco;
+   * punto 61 `pilone-borgo`: senza `buco` ma con materiale 0;
+   * la B16450 attraversa la nodestring `edificio_paratoie_borgo`, prolungata a mano a monte;
+   * passo ed eccezioni da rimappare; angoli 853/1126 e 1367/B17900.
+
+## 24 novembre 2026, sera: punti buco, nodestring delle paratoie e analisi del passo sui due rami
+
+Decisioni dell'utente sui punti aperti della voce precedente:
+
+1. **`buco` dei punti regione.** Sui punti 30 e 1054 (`sottopasso-borgo`) il campo è stato svuotato: era una dimenticanza, il sottopasso non c'è più. Sul pilone 61 è stato rimesso a 1, perché deve restare un pilone. Fid e posizioni sono invariati. Per farlo `write3.py` della skill ha una chiave nuova, `reg_attr`.
+2. **Nodestring `edificio_paratoie_borgo`.** Ora parte dal punto in cui la B16450 incontra il muro 893, quindi la sezione non attraversa più la nodestring. Sono stati tolti i due vertici più a monte aggiunti a mano.
+3. Backup `20261124h` (boundary, regioni). Dopo questa scrittura l'utente usa i layer in QGIS: non li tocco più.
+
+### Verifiche (file riletti dal disco)
+
+1. `verify3.py`: nessun incrocio fra sezioni e nodestring; i punti originali con attributi diversi dagli originali sono solo il 30 (materiale 1, voluto).
+2. `check_regions.py`: 918 facce, nessuna senza punto, nessuna con due punti; stabile all'arrotondamento.
+3. `sync_cp_bp.py`: 0 cambiamenti.
+
+### Analisi statistica del passo, rifatta sui rami V e B
+
+* `scripts/dx_dev.py` e `scripts/dx_dev_fig.py` ora leggono rami, nomi delle sezioni ed eccezioni dalla configurazione; le sezioni con più vertici sono trattate come spezzate. Sui layer di prima dell'unione danno le stesse grandezze di prima per tutte le 732 coppie.
+* Risultati (736 coppie: 60 V, 676 B):
+  * passo medio 50.07 m, deviazione standard 0.74 m;
+  * dx_dev_abs dell'intero modello 0.183: il passo più corto è B02250–B02300 (40.90 m, angolo 83°), seguito da B27350–B27400 (41.86 m). Senza queste due coppie scende a 0.086;
+  * B02250–B02300 e B02100–B02150 sono nate dallo spostamento delle vecchie N verso monte: sono finite in una curva di quasi 90°.
+* Documento [Brenta_analisi_passo_50m.md](Brenta_analisi_passo_50m.md) riscritto sullo stato attuale; CSV e figure rigenerati.
+
+## 24 novembre 2026, notte: ultime sezioni modificate a mano ed eccezioni accettate
+
+L'utente ha controllato tutte le violazioni, ha modificato a mano B00150, B01150, B01900 e B02000 e ha tolto le nodestring `check_portata_1` e `check_portata_2` (ora le nodestring sono 48). Tutto quello che resta è accettato come eccezione. Ho scritto solo nei layer chiusi; boundary era ancora aperto in QGIS ed è stato solo letto.
+
+1. **Bankpoint e centerpoint.** `sync_cp_bp.py` trova le 4 sezioni: 4 bankpoint diventano `manuale` (spostati di 2.1–2.5 m) e i centerpoint si spostano di 2–24 mm.
+2. **Vertici a pochi millimetri dagli incroci.** Le sezioni modificate incrociano le breakline a 2–27 mm da un vertice (B01150: linee 38, 39, 40, 41; B01900: linea 187). `fix_manual.py` porta quei vertici sull'incrocio, così non nascono lati di mesh di pochi millimetri.
+3. **Punti regione.** Togliendo `check_portata_1` e `check_portata_2` si sono fuse delle facce: 6 facce con 3 punti originali e 2 con 2 punti derivati, tutti con gli stessi attributi. In ogni faccia si tiene il punto con il fid più basso; sono tolti gli originali 66, 67, 73, 74, 75, 76, 77, 78, 87, 88, 91, 92 e i derivati 997, 1003. I punti regione sono ora 904.
+4. Tutto in una scrittura, backup `20261124i` (breaklines, regioni, linee d'asse, centerpoint, bankpoint).
+5. **Configurazione** (`docs/rcs_config_brenta_vb.json`): `nodestrings.count` = 48; gli originali tolti sono in `originals.region_fids_deleted`; tutte le eccezioni sono registrate con il motivo (elenco in [regole e metodo](Brenta_regole_e_metodo.md), §14 bis).
+
+### Verifiche (file riletti dal disco)
+
+1. `sync_cp_bp.py`: 0 cambiamenti. `verify3_dtm.py`: le 1476 quote coincidono con il DTM. `fix_manual.py`: nulla da correggere.
+2. `check_regions.py`: 904 facce, nessuna senza punto, nessuna con due punti; stabile all'arrotondamento.
+3. `verify3.py`: passo, regola dei nodi vicini (anche sui muri) e angoli coincidono esattamente con le eccezioni. Restano segnalati, ma non sono violazioni: il fid 22 della V00000, gli attributi del punto 30 voluti dall'utente e il punto 1016 a 0.52 m da una linea.
+4. Tabella delle sezioni rigenerata.
+
+### Analisi del passo
+
+Rifatta con le eccezioni: 25 coppie escluse. Senza eccezioni dx_dev_abs dell'intero modello vale 0.085: il passo minimo è B18750–B18800 (45.82 m) e il dt CFL è il 91.5% di quello con il passo medio. Con tutte le coppie restano 0.183 e B02250–B02300 (40.90 m). Documento, CSV e figure aggiornati.

@@ -1,6 +1,6 @@
 ---
 name: river-cross-sections
-description: Builds cross-sections at a constant spacing (e.g. 50 ± 0.5 m) as nodestrings of a BASEmesh/BASEMENT 2D river mesh, from breaklines, nodestrings, region points and a DTM. Covers centerlines, optional bank widening, centerpoints, bankpoints on the DTM, section drawing (left to right), the near-node rule on breaklines, the 30-degree angle rule, one region point per face, writing GeoPackages with verified backups, full checks, realignment after manual edits in QGIS and the check of the generated mesh. Use when the user asks to create, redo or check river cross-sections, bankpoints, centerpoints or centerlines for a BASEMENT/BASEmesh model, or to realign the layers after editing sections by hand.
+description: Builds cross-sections at a constant spacing (e.g. 50 ± 0.5 m) as nodestrings of a BASEmesh/BASEMENT 2D river mesh, from breaklines, nodestrings, region points and a DTM, in any number of independent reaches chosen and named by the user (reaches can be added, removed, merged or split). Covers centerlines, optional bank widening, centerpoints, bankpoints on the DTM, section drawing (left to right), the near-node rule on breaklines (near vertex moved onto the crossing), the 30-degree angle rule, one region point per face, writing GeoPackages with verified backups, full checks, realignment after manual edits in QGIS and the check of the generated mesh. Use when the user asks to create, redo or check river cross-sections, bankpoints, centerpoints or centerlines for a BASEMENT/BASEmesh model, or to realign the layers after editing sections by hand.
 ---
 
 # River cross-sections for BASEmesh/BASEMENT
@@ -12,7 +12,8 @@ The scripts are in `scripts/` of this skill and are case-independent. Every case
 ## Before anything else
 
 1. **Read** [references/working-folder.md](references/working-folder.md): what each folder is for, and what may and may not be done in it.
-2. **First interaction:** survey the material, present a work plan and ask the kickoff questions, following [references/kickoff.md](references/kickoff.md). Do not write any layer before the user has confirmed the configuration.
+2. **First interaction:** survey the material, present a work plan and ask the kickoff questions, following [references/kickoff.md](references/kickoff.md). The first question is the **reaches**: how many independent reaches, what each covers, how each is called and identified. Do not write any layer before the user has confirmed the configuration.
+3. **The reaches are not fixed.** The user may add, remove, merge or split reaches at any time; follow [method: changing the reaches](references/method.md#changing-the-reaches).
 
 ## Non-negotiable rules
 
@@ -45,7 +46,7 @@ Run every script from the working folder: `cd <WD>; <python> <skill>/scripts/<na
 | 5 | Section positions and centerpoints (dynamic programming, anchors); first rebuild the graph of the derived layers | `graph.py --layers out`, `xn_points.py`, `place.py`, `dp.py`, `export_sec.py` | [method §4](references/method.md#4-section-positions-and-centerpoints) |
 | 6 | Bankpoints on the DTM | `next_bed.py`, `obst.py`, `bank.py` | [method: bankpoints](references/method.md#bankpoints) |
 | 7 | Sections drawn left to right, from bankpoint to bankpoint | `assemble.py` | [method §6](references/method.md#6-drawing-the-sections) |
-| 8 | Near-node rule on the breaklines ⛔ violations | `fix_near_nodes.py`, `check_near_nodes.py`, `check_geom.py`, `check_angles.py` | [method §7–8](references/method.md#7-near-node-rule) |
+| 8 | Near-node rule on the breaklines: move the near vertex onto the crossing; the alternative fix only for what remains ⛔ violations | `snap_near_nodes.py`, `write3.py`; if needed `fix_near_nodes.py`, `check_near_nodes.py`, `check_geom.py`; then `check_angles.py` | [method §7–8](references/method.md#7-near-node-rule) |
 | 9 | One region point per face | `regions2.py` | [method §9](references/method.md#9-region-points) |
 | 10 | Payload and writing ⛔ layers closed? | `prep_write.py`, `write3.py` | [working folder](references/working-folder.md#how-a-layer-is-written) |
 | 11 | Bridge closures exactly on their nodestrings | `fix_bridges.py`, `write3.py` | [method §8](references/method.md#8-editing-lines-topology-and-angles) |
@@ -57,9 +58,10 @@ Run every script from the working folder: `cd <WD>; <python> <skill>/scripts/<na
 1. Run `fix_manual.py` if repairs are needed, then `write3.py`.
 2. Run `sync_cp_bp.py`, then `write3.py`.
 3. Run `sync_cp_bp.py` again: it must report 0 changes.
-4. Run the step-12 checks.
-5. Propose an exception for every remaining violation.
-6. Ask the user to regenerate the mesh, and run step 14.
+4. Run `snap_near_nodes.py` and write its payload. The edited sections cross the breaklines at new points.
+5. Run the step-12 checks. Faces left without a region point usually mean that an edited section cuts a face beyond the toe: ask whether to shorten the section or add the point ([method §9](references/method.md#9-region-points)).
+6. Propose an exception for every remaining violation.
+7. Ask the user to regenerate the mesh, and run step 14.
 
 See [method §10](references/method.md#10-manual-edits-by-the-user).
 

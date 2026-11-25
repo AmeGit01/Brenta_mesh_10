@@ -54,7 +54,7 @@ One file per case, in the working folder. Paths are relative to that folder.
 | `sections.digits`, `.name_pattern` | Digits of the section number; regex that recognises a section name (e.g. `^[NVB]\d{5}$`). |
 | `sections.first_fid`, `.first_id` | fid and id of the first section in the nodestring layer. The others follow in reach order. |
 | `centerlines[]` | One entry per line: `name`; `from` and `to` (a nodestring name, `[x, y]`, or for `to` also `join:<other line>`); `waypoints` (names or `[x, y]`, to force a branch); `cost` (`centre` = stay in the middle of the bed, `length` = shortest); `join_point` (optional end point when joining). |
-| `reaches[]` | One entry per reach. See the details below. |
+| `reaches[]` | One entry per reach, as many as the user wants; they can be added, removed, merged or split later ([method](method.md#changing-the-reaches)). See the details below. |
 | `anchors[]` | `{section, nodestring}`: the section must coincide with that nodestring. The reach shifts to make it so. |
 
 Each `reaches[]` entry has these keys:
@@ -85,7 +85,7 @@ Each `reaches[]` entry has these keys:
 
 | Key | Content |
 |---|---|
-| `rules.near_node.radius` | Near-node distance R, **chosen by the user**. |
+| `rules.near_node.radius` | Near-node distance R, **chosen by the user** (Brenta: 2 m). |
 | `rules.near_node.slide_margin` | A slid node stops at R + margin. |
 | `rules.near_node.max_displacement` | Maximum displacement of the line network per operation. |
 | `rules.near_node.ignore_below` | Distances below this are a coincident vertex, not a violation. |
@@ -105,6 +105,7 @@ Accepted by the user, each with a `reason` and a `date`. This is the only place 
 | `exceptions.near_node[]` | `{section, reason, date}` |
 | `exceptions.locked_line[]` | `{section, reason, date}`. The near vertex belongs to a locked line. |
 | `exceptions.spacing[]` | `{pair: [a, b], reason, date}` |
+| `exceptions.vertices[]` | `{section, reason, date}`. The section may have more than two vertices; the first is the left end, the last the right end. |
 | `exceptions.angle[]` | `{where: [x, y] or a list of ids (int = breakline fid, string = nodestring name), reason, date}` |
 
 ## Script parameters
