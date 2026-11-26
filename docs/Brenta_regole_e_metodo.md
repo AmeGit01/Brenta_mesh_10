@@ -227,7 +227,6 @@ Accettate dall'utente il 24 novembre 2026, dopo le ultime modifiche a mano. Sono
 | Sezione | Motivo |
 |---|---|
 | B15950, B16250, B16450 (2 incroci), B16600, B16650 | vertice vicino su una linea bloccata dei muri di Borgo (da 0.87 a 1.42 m; alla B16250 è condiviso con il muro nuovo 1463) |
-| B06800 | vertici 562 e 565 (0.66 e 0.51 m) su un'altra nodestring o sezione |
 | B08900 | vertici 649 e 650 (1.05 e 0.89 m): spostarli porterebbe via un punto regione o creerebbe un angolo di 7.3° |
 
 **Passo (50 ± 0.5 m, lungo la linea d'asse o in linea retta):**

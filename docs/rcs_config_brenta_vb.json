@@ -232,11 +232,6 @@
     "_comment": "accepted by the user on 2026-11-24 after the manual edits (current state, two reaches V and B)",
     "near_node": [
       {
-        "section": "B06800",
-        "reason": "near vertices 562/565 (0.66, 0.51 m) lie on another nodestring or section; accepted by the user",
-        "date": "2026-11-24"
-      },
-      {
         "section": "B08900",
         "reason": "near vertices 649/650 (1.05, 0.89 m): moving them sweeps a region point or makes a 7.3 deg angle; accepted by the user",
         "date": "2026-11-24"

@@ -816,3 +816,20 @@ L'utente ha controllato tutte le violazioni, ha modificato a mano B00150, B01150
 ### Analisi del passo
 
 Rifatta con le eccezioni: 25 coppie escluse. Senza eccezioni dx_dev_abs dell'intero modello vale 0.085: il passo minimo è B18750–B18800 (45.82 m) e il dt CFL è il 91.5% di quello con il passo medio. Con tutte le coppie restano 0.183 e B02250–B02300 (40.90 m). Documento, CSV e figure aggiornati.
+
+## 26 novembre 2026: B13100 allargata a destra e B06800 sistemata
+
+L'utente ha allargato a mano verso destra la B13100 e, in QGIS, ha spostato i vertici 562 e 565 (con le breakline 834 e 836) vicini alla B06800.
+
+1. **Bankpoint e centerpoint.** `sync_cp_bp.py` trova solo la B13100: il bankpoint destro diventa `manuale` (spostato di 2.37 m) e il centerpoint si sposta di 3 cm. Backup `20261126a` (linee d'asse, centerpoint, bankpoint). Gli altri layer non sono stati scritti.
+2. **Eccezione scaduta.** La B06800 non viola più la regola dei nodi vicini; la sua eccezione è tolta dalla configurazione. Resta B08900.
+
+### Verifiche (file riletti dal disco, dopo la chiusura di QGIS)
+
+1. `sync_cp_bp.py`: 0 cambiamenti. `verify3_dtm.py`: le 1476 quote coincidono con il DTM. `fix_manual.py`: nulla da correggere.
+2. `snap_near_nodes.py`: nessuno spostamento, nessun rifiuto.
+3. `check_regions.py`: 904 facce, nessuna senza punto, nessuna con due punti.
+4. `verify3.py`: passo, nodi vicini e angoli coincidono con le eccezioni. Restano i soli avvisi noti (fid 22 della V00000, attributi del punto 30, punto 1016 a 0.52 m da una linea).
+5. Tabella delle sezioni e analisi del passo rigenerate: 23 coppie escluse; senza eccezioni dx_dev_abs 0.085 (B18750–B18800), con tutte le coppie 0.183 (B02250–B02300).
+
+I layer sono definitivi per rigenerare la mesh.
