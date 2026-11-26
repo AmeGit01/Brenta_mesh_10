@@ -1,6 +1,6 @@
 # Analisi statistica del passo tra le sezioni (sezioni a 50 m)
 
-Analisi delle sezioni attuali, in due rami: **V** (V00000–V03000, Brenta vecchio) e **B** (B00000–B33800, da Caldonazzo a valle). Stato del 26 novembre 2026: dopo le ultime modifiche a mano (B00150, B01150, B01900, B02000, B13100 e i vertici vicini alla B06800) e con le eccezioni accettate dall'utente (backup `20261126a`). Il contesto è nel [registro di lavoro](workflow.md) e nelle [regole e metodo](Brenta_regole_e_metodo.md).
+Analisi delle sezioni attuali, in due rami: **V** (V00000–V03000, Brenta vecchio) e **B** (B00000–B33800, da Caldonazzo a valle). Stato del 26 novembre 2026: dopo le ultime modifiche a mano (B00150, B01150, B01900, B02000, B13100, B16850 e i vertici vicini alla B06800) e con le eccezioni accettate dall'utente (backup `20261126b`). Il contesto è nel [registro di lavoro](workflow.md) e nelle [regole e metodo](Brenta_regole_e_metodo.md).
 
 * **Script:** `scripts/dx_dev.py` per le tabelle ([scheda](scripts/dx_dev.md)) e `scripts/dx_dev_fig.py` per le figure ([scheda](scripts/dx_dev_fig.md)). Rami ed eccezioni vengono letti dalla configurazione [rcs_config_brenta_vb.json](rcs_config_brenta_vb.json).
 * **Dati di ogni coppia:** [Brenta_dx_dev_50m.csv](Brenta_dx_dev_50m.csv).
@@ -20,9 +20,9 @@ Le statistiche sono date due volte:
 
 Le eccezioni sono quelle accettate dall'utente il 24 novembre 2026 (regole e metodo, §14 bis):
 * **sezioni** (escludono le due coppie che toccano): B16100 (3 vertici); B15950, B16250, B16450, B16600, B16650 (vertice vicino su una linea bloccata dei muri di Borgo); B08900 (regola dei nodi vicini);
-* **coppie di passo:** V00000–V00050, V01050–V01100, B01150–B01200, B01900–B01950, B02000–B02050, B02100–B02150, B02250–B02300, B15900–B15950, B15950–B16000, B16050–B16100, B16300–B16350, B16400–B16450, B16450–B16500, B16600–B16650, B17050–B17100, B27350–B27400.
+* **coppie di passo:** V00000–V00050, V01050–V01100, B01150–B01200, B01900–B01950, B02000–B02050, B02100–B02150, B02250–B02300, B15900–B15950, B15950–B16000, B16050–B16100, B16300–B16350, B16400–B16450, B16450–B16500, B16600–B16650, B16850–B16900, B17050–B17100, B27350–B27400.
 
-In tutto sono escluse 23 coppie: 2 nel ramo V e 21 nel ramo B.
+In tutto sono escluse 24 coppie: 2 nel ramo V e 22 nel ramo B.
 
 Nelle figure le coppie in eccezione sono disegnate con un cerchio vuoto grigio.
 
@@ -92,11 +92,11 @@ Vale 0 per due sezioni parallele e cresce quando convergono da un lato (figura 1
 | Insieme | Coppie | Media | Mediana | Dev. std | 90° perc. | 95° perc. | 99° perc. | Max | > 0.01 | > 0.02 | > 0.05 | > 0.10 | Angolo medio (°) | Larghezza media (m) |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | V, tutte | 60 | 0.0120 | 0.0083 | 0.0125 | 0.0266 | 0.0338 | 0.0547 | 0.0580 | 24 | 10 | 3 | 0 | 3.74 | 19.8 |
-| B, tutte | 676 | 0.0207 | 0.0076 | 0.0315 | 0.0645 | 0.0899 | 0.1428 | 0.2482 | 303 | 206 | 89 | 20 | 3.74 | 35.0 |
-| **Totale, tutte** | 736 | 0.0199 | 0.0076 | 0.0305 | 0.0613 | 0.0865 | 0.1411 | 0.2482 | 327 | 216 | 92 | 20 | 3.74 | 33.8 |
+| B, tutte | 676 | 0.0207 | 0.0076 | 0.0316 | 0.0645 | 0.0899 | 0.1428 | 0.2482 | 303 | 206 | 89 | 20 | 3.74 | 35.0 |
+| **Totale, tutte** | 736 | 0.0200 | 0.0076 | 0.0306 | 0.0613 | 0.0865 | 0.1411 | 0.2482 | 327 | 216 | 92 | 20 | 3.74 | 33.8 |
 | V, senza eccezioni | 58 | 0.0114 | 0.0083 | 0.0116 | 0.0260 | 0.0294 | 0.0548 | 0.0580 | 23 | 9 | 2 | 0 | 3.58 | 19.7 |
-| B, senza eccezioni | 655 | 0.0201 | 0.0075 | 0.0297 | 0.0632 | 0.0879 | 0.1385 | 0.1804 | 292 | 198 | 85 | 18 | 3.40 | 35.5 |
-| **Totale, senza eccezioni** | 713 | 0.0194 | 0.0076 | 0.0287 | 0.0598 | 0.0839 | 0.1372 | 0.1804 | 315 | 207 | 87 | 18 | 3.41 | 34.2 |
+| B, senza eccezioni | 654 | 0.0200 | 0.0075 | 0.0295 | 0.0628 | 0.0866 | 0.1385 | 0.1804 | 291 | 197 | 84 | 17 | 3.37 | 35.5 |
+| **Totale, senza eccezioni** | 712 | 0.0193 | 0.0076 | 0.0286 | 0.0595 | 0.0838 | 0.1372 | 0.1804 | 314 | 206 | 86 | 17 | 3.38 | 34.2 |
 
 **Tabella 4.** Le 15 coppie con dx_dev più alto, su tutte le coppie. Le distanze sono in metri; dx_avg − dx_c è la differenza della tabella 2.
 
@@ -115,8 +115,8 @@ Vale 0 per due sezioni parallele e cresce quando convergono da un lato (figura 1
 | B27150–B27200 | 50.50 | 50.01 | −0.49 | 43.47 | 57.27 | 0.1308 | 19.9 | 42.0 | |
 | B30150–B30200 | 50.50 | 50.25 | −0.25 | 44.08 | 58.07 | 0.1228 | 28.0 | 32.0 | |
 | B17700–B17750 | 50.25 | 46.54 | −3.71 | 41.16 | 55.76 | 0.1157 | 32.2 | 37.9 | |
+| B16850–B16900 | 50.62 | 47.87 | −2.75 | 42.35 | 55.07 | 0.1153 | 24.4 | 33.3 | sì |
 | B21050–B21100 | 50.00 | 48.05 | −1.95 | 42.58 | 54.94 | 0.1138 | 19.3 | 38.3 | |
-| B28250–B28300 | 49.75 | 50.42 | +0.67 | 44.86 | 56.46 | 0.1102 | 5.1 | 135.3 | |
 
 ![Istogramma di dx_dev per ramo](figures/fig05_dx_dev_istogramma.png)
 
@@ -129,7 +129,7 @@ Vale 0 per due sezioni parallele e cresce quando convergono da un lato (figura 1
 **Come leggere l'analisi 1**
 
 * **Sezioni quasi parallele.** In mediana dx_dev vale 0.8%, circa 0.4 m su 50 m. Nel 90% delle coppie resta sotto il 6.1%, e solo 20 coppie su 736 superano il 10% (tabella 3, figura 5).
-* **Peso delle eccezioni.** Toglierle cambia poco la media (da 0.0199 a 0.0194) ma abbassa il massimo da 0.248 a 0.180: le due curve strette B27350–B27400 e B01900–B01950 sono in eccezione. A Borgo i valori sono bassi (0.0001–0.049), perché lì il letto è stretto.
+* **Peso delle eccezioni.** Toglierle cambia poco la media (da 0.0200 a 0.0193) ma abbassa il massimo da 0.248 a 0.180: le due curve strette B27350–B27400 e B01900–B01950 sono in eccezione. A Borgo i valori sono bassi (0.0001–0.049), perché lì il letto è stretto.
 * **Ramo B.** Ha valori in media 1.7 volte quelli del ramo V. Gli angoli medi sono uguali (3.7°), ma le sezioni del ramo B sono larghe in media 35 m, contro 20, e arrivano a 178 m.
 * **Geometria.** dx_dev cresce come larghezza · tan(angolo) / dx_avg. La correlazione con questa grandezza è 0.75 su tutte le coppie (figura 6). Il valore è abbassato da un solo punto, B02250–B02300: con un angolo di 83° la tangente è enorme ma la sezione è larga solo 6–16 m. Senza quella coppia la correlazione è 0.96, e la correlazione per ranghi (Spearman) è 0.99. Con il solo angolo la correlazione è 0.76, con la sola larghezza 0.43.
 * **Due tipi di casi.** I valori alti nascono o da un angolo grande (B27350–B27400: 43°, B01900–B01950: 51°, entrambe in eccezione) o da una sezione molto larga con un angolo piccolo (B28300–B28350: 6° su 132 m). Solo i primi accorciano davvero il passo. Nella tabella 4 le coppie con angolo sopra i 25° hanno tutte dx_avg − dx_c negativo, da −0.25 a −8.64 m. Quelle larghe almeno 60 m con angolo sotto i 16° hanno invece differenze positive, da +0.67 a +1.58 m.
@@ -150,8 +150,8 @@ Partendo dalla serie dei dx_avg,i di un insieme di coppie (un ramo, o tutto il m
 | B, tutte | 676 | 50.06 | 0.76 | 40.90 | B02250–B02300 | 53.12 | 0.1829 | 0.817 | 0.0599 | 0.3582 |
 | **Totale, tutte** | 736 | 50.07 | 0.74 | 40.90 | B02250–B02300 | 53.12 | **0.1830** | 0.817 | 0.0599 | 0.3587 |
 | V, senza eccezioni | 58 | 50.08 | 0.37 | 49.07 | V02800–V02850 | 51.73 | 0.0203 | 0.980 | 0.0076 | 0.0609 |
-| B, senza eccezioni | 655 | 50.10 | 0.51 | 45.82 | B18750–B18800 | 52.19 | 0.0855 | 0.915 | 0.0081 | 0.1965 |
-| **Totale, senza eccezioni** | 713 | 50.10 | 0.50 | 45.82 | B18750–B18800 | 52.19 | **0.0854** | 0.915 | 0.0081 | 0.1970 |
+| B, senza eccezioni | 654 | 50.11 | 0.51 | 45.82 | B18750–B18800 | 52.19 | 0.0855 | 0.914 | 0.0081 | 0.1966 |
+| **Totale, senza eccezioni** | 712 | 50.10 | 0.50 | 45.82 | B18750–B18800 | 52.19 | **0.0855** | 0.915 | 0.0081 | 0.1972 |
 
 **Tabella 6.** Percentili dello scarto di ogni coppia dalla media del suo insieme, e_i = (dx_avg,i − media) / media, e numero di coppie sotto −2%, −5% e −10%. Lo scarto è con segno: negativo per le coppie più corte della media.
 
@@ -161,8 +161,8 @@ Partendo dalla serie dei dx_avg,i di un insieme di coppie (un ramo, o tutto il m
 | B, tutte | −0.0636 | −0.0154 | −0.0075 | 0.0027 | 0.0093 | 0.0112 | 0.0227 | 30 | 9 | 2 |
 | **Totale, tutte** | −0.0614 | −0.0146 | −0.0073 | 0.0024 | 0.0091 | 0.0110 | 0.0235 | 30 | 9 | 2 |
 | V, senza eccezioni | −0.0181 | −0.0085 | −0.0075 | −0.0003 | 0.0074 | 0.0083 | 0.0190 | 1 | 0 | 0 |
-| B, senza eccezioni | −0.0382 | −0.0126 | −0.0077 | 0.0019 | 0.0084 | 0.0104 | 0.0201 | 23 | 3 | 0 |
-| **Totale, senza eccezioni** | −0.0357 | −0.0120 | −0.0076 | 0.0017 | 0.0084 | 0.0102 | 0.0214 | 24 | 3 | 0 |
+| B, senza eccezioni | −0.0354 | −0.0118 | −0.0077 | 0.0018 | 0.0084 | 0.0104 | 0.0201 | 22 | 3 | 0 |
+| **Totale, senza eccezioni** | −0.0349 | −0.0117 | −0.0077 | 0.0017 | 0.0083 | 0.0102 | 0.0214 | 23 | 3 | 0 |
 
 ![dx_avg ordinati](figures/fig07_dx_avg_ordinati.png)
 
@@ -172,8 +172,8 @@ Partendo dalla serie dei dx_avg,i di un insieme di coppie (un ramo, o tutto il m
 
 | Insieme | k = 0 | k = 1 | k = 2 | k = 3 | k = 5 | k = 10 |
 |---|---|---|---|---|---|---|
-| **Totale, tutte** | 0.1830 | 0.1640 | 0.0859 | 0.0853 | 0.0692 | 0.0438 |
-| **Totale, senza eccezioni** | 0.0854 | 0.0711 | 0.0594 | 0.0468 | 0.0414 | 0.0329 |
+| **Totale, tutte** | 0.1830 | 0.1640 | 0.0859 | 0.0853 | 0.0692 | 0.0450 |
+| **Totale, senza eccezioni** | 0.0855 | 0.0712 | 0.0595 | 0.0469 | 0.0414 | 0.0324 |
 
 ![Sensibilità di dx_dev_abs](figures/fig08_sensibilita.png)
 
@@ -185,15 +185,15 @@ Partendo dalla serie dei dx_avg,i di un insieme di coppie (un ramo, o tutto il m
 |---|---|---|---|---|---|---|---|
 | B02250–B02300 | 40.90 | −0.1830 | 50.50 | 36.98 | 0.0958 | 83.3 | sì |
 | B27350–B27400 | 41.86 | −0.1638 | 50.50 | 31.47 | 0.2482 | 42.9 | sì |
-| B02100–B02150 | 45.79 | −0.0855 | 50.50 | 42.32 | 0.0758 | 43.4 | sì |
+| B02100–B02150 | 45.79 | −0.0854 | 50.50 | 42.32 | 0.0758 | 43.4 | sì |
 | B18750–B18800 | 45.82 | −0.0848 | 50.50 | 39.45 | 0.1390 | 35.4 | |
 | B17700–B17750 | 46.54 | −0.0704 | 50.25 | 41.16 | 0.1157 | 32.2 | |
 | B01900–B01950 | 46.64 | −0.0684 | 50.51 | 37.46 | 0.1968 | 50.7 | sì |
 | B16050–B16100 | 46.76 | −0.0661 | 49.98 | 44.71 | 0.0438 | 12.0 | sì |
 | B16400–B16450 | 46.92 | −0.0629 | 47.14 | 46.56 | 0.0077 | 3.1 | sì |
-| B21100–B21150 | 47.14 | −0.0586 | 50.00 | 39.61 | 0.1596 | 26.1 | |
+| B21100–B21150 | 47.14 | −0.0585 | 50.00 | 39.61 | 0.1596 | 26.1 | |
 | B18700–B18750 | 47.77 | −0.0459 | 50.00 | 43.36 | 0.0922 | 20.9 | |
-| B16850–B16900 | 47.93 | −0.0426 | 50.50 | 42.81 | 0.1069 | 24.5 | |
+| B16850–B16900 | 47.87 | −0.0439 | 50.62 | 42.35 | 0.1153 | 24.4 | sì |
 | B21050–B21100 | 48.05 | −0.0403 | 50.00 | 42.58 | 0.1138 | 19.3 | |
 | B29400–B29450 | 48.05 | −0.0403 | 50.00 | 44.41 | 0.0757 | 7.4 | |
 | B17550–B17600 | 48.31 | −0.0351 | 50.00 | 43.50 | 0.0996 | 22.2 | |
@@ -208,7 +208,7 @@ Partendo dalla serie dei dx_avg,i di un insieme di coppie (un ramo, o tutto il m
 
 * **Passo molto uniforme.** Il passo medio è 50.07 m con una deviazione standard di 0.74 m; senza eccezioni 50.10 m e 0.50 m. L'80% delle coppie sta tra −0.7% e +0.9% dalla media (10° e 90° percentile, tabella 6), e la curva dei passi ordinati è quasi piatta (figura 7).
 * **Con tutte le coppie, due casi fissano il dt.** dx_dev_abs sull'intero modello vale 0.183: il passo minimo, B02250–B02300, è il 18% più corto della media. Togliendo quella coppia scende a 0.164 (B27350–B27400), togliendo anche questa a 0.086 (tabella 7, figura 8). Entrambe sono curve strette accettate come eccezioni.
-* **Senza eccezioni.** dx_dev_abs scende a 0.085: il passo minimo è B18750–B18800 (45.82 m, angolo 35°), seguito da B17700–B17750 (46.54 m) e B21100–B21150 (47.14 m). Il dt ammesso dalla CFL è il 91.5% di quello che si avrebbe con il passo medio, contro l'82% con tutte le coppie (tabella 5). Togliendo altre 10 coppie si arriva a 0.033, e a k = 20 a 0.023.
+* **Senza eccezioni.** dx_dev_abs scende a 0.085: il passo minimo è B18750–B18800 (45.82 m, angolo 35°), seguito da B17700–B17750 (46.54 m) e B21100–B21150 (47.14 m). Il dt ammesso dalla CFL è il 91.5% di quello che si avrebbe con il passo medio, contro l'82% con tutte le coppie (tabella 5). Togliendo altre 10 coppie si arriva a 0.032, e a k = 20 a 0.022.
 * **Le curve a monte, dopo l'unione dei rami.** B02100–B02150 e B02250–B02300 (ex N02150–N02200 e N02300–N02350) sono nel tratto in cui le sezioni del vecchio ramo N sono state spostate di 27.23 m verso monte, e sono finite in una curva di quasi 90°. Sono accettate come eccezioni.
 * **Effetto delle curve.** Lungo la linea d'asse il passo è quasi costante: senza eccezioni dx_dev_abs su dx_c vale 0.008. Il passo si accorcia davvero solo dove le sezioni si inclinano l'una rispetto all'altra, nelle curve (paragrafo 3). I casi peggiori dell'analisi 2 sono infatti anche ai primi posti dell'analisi 1, i primi cinque con angoli di 32–83° (tabella 8).
 * **Misura alternativa.** Se il passo fosse misurato con dx_min invece che con dx_avg, il caso peggiore sarebbe molto più severo: dx_dev_abs 0.36 con tutte le coppie e 0.20 senza eccezioni.

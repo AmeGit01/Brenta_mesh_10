@@ -833,3 +833,21 @@ L'utente ha allargato a mano verso destra la B13100 e, in QGIS, ha spostato i ve
 5. Tabella delle sezioni e analisi del passo rigenerate: 23 coppie escluse; senza eccezioni dx_dev_abs 0.085 (B18750–B18800), con tutte le coppie 0.183 (B02250–B02300).
 
 I layer sono definitivi per rigenerare la mesh.
+
+## 26 novembre 2026, seconda modifica: B16850 allargata
+
+L'utente ha allargato a mano la B16850 e ha ritoccato le breakline 896, 920 e 921.
+
+1. **Bankpoint e centerpoint.** `sync_cp_bp.py` trova solo la B16850. I due bankpoint diventano `manuale`, spostati di 2.81 m a sinistra e di 5.90 m a destra, e il centerpoint si sposta di 12 cm. Backup `20261126b` (linee d'asse, centerpoint, bankpoint).
+2. **Verifiche** (file riletti dal disco):
+   * `sync_cp_bp.py`: 0 cambiamenti; le quote coincidono con il DTM;
+   * `snap_near_nodes.py` e `fix_manual.py`: nulla da correggere;
+   * 904 facce, una per punto;
+   * nessun angolo nuovo sotto i 30°;
+   * nodi vicini come le eccezioni.
+   * **Nuovo:** B16850–B16900 è 50.62 m lungo la linea d'asse, fuori tolleranza. Non è un'eccezione registrata: da decidere con l'utente.
+3. Tabella delle sezioni e analisi del passo rigenerate; i valori di sintesi non cambiano (dx_dev_abs 0.183 con tutte le coppie, 0.085 senza eccezioni).
+
+## 26 novembre 2026: eccezione B16850–B16900
+
+L'utente accetta come eccezione di passo la coppia B16850–B16900 (50.62 m lungo la linea d'asse, B16850 allargata a mano). È registrata in `docs/rcs_config_brenta_vb.json` e nel §14 bis delle regole. `verify3.py`: il passo coincide di nuovo esattamente con le eccezioni. Analisi del passo rifatta: 24 coppie escluse, dx_dev_abs senza eccezioni 0.085 (B18750–B18800), con tutte le coppie 0.183. Nessun layer scritto.

@@ -57,7 +57,7 @@ Si leggono dalla configurazione. Una coppia è esclusa dalle statistiche "senza 
 * almeno una delle due sezioni compare in `exceptions.near_node`, `exceptions.locked_line` o `exceptions.vertices` (un'eccezione di sezione tocca le sue due coppie);
 * oppure la coppia stessa è in `exceptions.spacing` (un'eccezione di passo riguarda solo quella coppia).
 
-Al 24 novembre 2026, sera, le eccezioni accettate escludono 23 coppie (2 nel ramo V, 21 nel ramo B). Ogni tabella è data con tutte le coppie e senza eccezioni.
+Al 24 novembre 2026, sera, le eccezioni accettate escludono 24 coppie (2 nel ramo V, 22 nel ramo B). Ogni tabella è data con tutte le coppie e senza eccezioni.
 
 Fino al 19 novembre le eccezioni erano scritte nel codice, con i rami N, V e B. Sui layer di allora lo script attuale dà le stesse grandezze per tutte le 732 coppie; cambiano solo 5 coppie vicine a eccezioni di passo, che prima erano escluse e ora no.
 

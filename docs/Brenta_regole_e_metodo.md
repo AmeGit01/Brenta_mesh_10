@@ -245,6 +245,7 @@ Accettate dall'utente il 24 novembre 2026, dopo le ultime modifiche a mano. Sono
 | B16300–B16350 | 50.504 m, tra i muri di Borgo |
 | B16400–B16450, B16450–B16500 | 47.1 e 53.6 m: B16450 posata a mano tra i muri di Borgo |
 | B16600–B16650 | 50.502 m: B16600 modificata a mano |
+| B16850–B16900 | 50.62 m lungo la linea d'asse: B16850 allargata a mano (eccezione del 26 novembre 2026) |
 | B17050–B17100 | 50.509 m: B17100 modificata a mano |
 | B27350–B27400 | curva stretta, 47.85 m in linea retta |
 

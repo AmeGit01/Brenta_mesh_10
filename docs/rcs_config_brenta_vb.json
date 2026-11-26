@@ -392,6 +392,14 @@
         ],
         "reason": "tight bend, straight 47.85 m",
         "date": "2026-11-24"
+      },
+      {
+        "pair": [
+          "B16850",
+          "B16900"
+        ],
+        "reason": "50.62 m along the centerline: B16850 widened by hand",
+        "date": "2026-11-26"
       }
     ],
     "angle": [
